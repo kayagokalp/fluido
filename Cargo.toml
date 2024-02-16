@@ -5,5 +5,3 @@ edition = "2021"
 
 [dependencies]
 egg = "0.9.5"
-ordered-float = { version = "4.0", default-features = false }
-rand = "0.8.5"
