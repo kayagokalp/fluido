@@ -1,9 +1,11 @@
+mod cmd;
 mod concentration;
 
-use std::{collections::HashSet, hash::Hash, time::Duration};
-
+use clap::Parser;
+use cmd::Args;
 use concentration::Concentration;
 use egg::{rewrite as rw, *};
+use std::{collections::HashSet, hash::Hash, time::Duration};
 
 define_language! {
     enum MixLang {
@@ -124,24 +126,36 @@ impl CostFunction<MixLang> for SillyCostFn {
     }
 }
 
-fn main() {
-    let start = "(0.1625)".parse().unwrap();
+fn main() -> anyhow::Result<()> {
+    let args = Args::try_parse()?;
+    handle_args(args);
+    Ok(())
+}
+
+fn handle_args(args: Args) {
+    let start = format!("({})", args.target_concentration).parse().unwrap();
 
     println!("Starting to equality saturation, this will take ~60 seconds");
     let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
         .with_expr(&start)
         .with_node_limit(10000000000000000)
         .with_iter_limit(100000)
-        .with_time_limit(Duration::from_secs(60))
+        .with_time_limit(Duration::from_secs(args.time_limit))
         .run(&generate_mix_rules());
 
     runner.print_report();
 
+    let input_space = args
+        .input_space
+        .iter()
+        .map(|concentration| Concentration::from_f64(*concentration))
+        .collect();
+
     let extractor = Extractor::new(
         &runner.egraph,
         SillyCostFn::new(
-            [Concentration::from_f64(0.1), Concentration::from_f64(0.2)].into(),
-            Concentration::from_f64(0.1625),
+            input_space,
+            Concentration::from_f64(args.target_concentration),
         ),
     );
     let (cost, best_expr) = extractor.find_best(runner.roots[0]);

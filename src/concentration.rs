@@ -42,14 +42,12 @@ impl FromStr for Concentration {
 impl std::fmt::Display for Concentration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let epsilon_corrected = self.wrapped as f64 * Self::EPSILON;
-        let scale = 1f64/Self::EPSILON;
+        let scale = 1f64 / Self::EPSILON;
         let truncated = (epsilon_corrected * scale).trunc() / scale;
 
         write!(f, "{}", truncated)
-
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -60,10 +58,8 @@ mod tests {
         let num_a = 0.00005;
         let num_b = 0.00009;
 
-
         let conc_a = Concentration::from_f64(num_a);
         let conc_b = Concentration::from_f64(num_b);
-
 
         assert_eq!(conc_a, conc_b)
     }
