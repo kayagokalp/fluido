@@ -135,12 +135,17 @@ fn main() -> anyhow::Result<()> {
 fn handle_args(args: Args) {
     let start = format!("({})", args.target_concentration).parse().unwrap();
 
-    println!("Starting to equality saturation, this will take ~60 seconds");
+    let time_limit = args.time_limit;
+
+    println!(
+        "Starting to equality saturation, this will take ~{} seconds",
+        time_limit
+    );
     let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
         .with_expr(&start)
         .with_node_limit(10000000000000000)
         .with_iter_limit(100000)
-        .with_time_limit(Duration::from_secs(args.time_limit))
+        .with_time_limit(Duration::from_secs(time_limit))
         .run(&generate_mix_rules());
 
     runner.print_report();
