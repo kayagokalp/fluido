@@ -20,8 +20,9 @@
 
       in rec {
         packages = {
-          hello-world = (rustPkgs.workspace.fluido-saturate {});
-          default = packages.hello-world;
+          fluido-saturate = (rustPkgs.workspace.fluido-saturate {});
+          default = packages.fluido-saturate;
+	  release = true;
         };
       }
     );
