@@ -2,6 +2,46 @@
 
 A mixer searching experiment using equality saturation, more specifically `egg`.
 
+## Building 
+
+This repo can be built with [cargo](https://doc.rust-lang.org/cargo/) or using the [nix flake](https://nixos.wiki/wiki/Flakes).
+
+### Using Cargo
+
+Install rust toolchain manager (rustup):
+
+```console
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Build with cargo:
+
+```console
+cargo build --release
+```
+
+### Using nix
+
+This repo has a nix flake which can be used to either get a dev environment for working on this repoo or building the project.
+
+To install nix and enable experimental flake feature:
+
+```console
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
+```
+
+Assuming nix is installed, building the binary:
+
+```console
+nix build
+```
+
+Getting a dev environment to work on this repo:
+
+```console
+nix develop
+```
+
 ## Usage
 
 Example code comes with a CLI:
