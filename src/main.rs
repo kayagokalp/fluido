@@ -12,7 +12,6 @@ define_language! {
         "mix" = Mix([Id; 2]),
         Num(Concentration),
         "+" = Add([Id; 2]),
-        "/" = Div([Id; 2]),
         "-" = Sub([Id; 2]),
     }
 }
@@ -34,15 +33,6 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
                 let node_b_num = egraph[node_b].data.as_ref();
 
                 node_a_num.and_then(|node_a| node_b_num.map(|node_b| node_a + node_b))
-            }
-            MixLang::Div(div) => {
-                let node_a = div[0];
-                let node_b = div[1];
-
-                let node_a_num = egraph[node_a].data.as_ref();
-                let node_b_num = egraph[node_b].data.as_ref();
-
-                node_a_num.and_then(|node_a| node_b_num.map(|node_b| node_a / node_b))
             }
             MixLang::Sub(sub) => {
                 let node_a = sub[0];
