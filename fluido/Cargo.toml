@@ -1,0 +1,9 @@
+[package]
+name = "fluido"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+mixer-generator = { path = "../mixer-generator/" }
+anyhow = "1.0.79"
+clap = { version = "4.5.0", features = ["derive"] }

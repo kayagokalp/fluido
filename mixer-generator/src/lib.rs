@@ -1,14 +1,12 @@
 mod cmd;
-mod concentration;
+pub mod concentration;
 
-use clap::Parser;
-use cmd::Args;
 use concentration::Concentration;
 use egg::{rewrite as rw, *};
 use std::{collections::HashSet, hash::Hash, time::Duration};
 
 define_language! {
-    enum MixLang {
+    pub enum MixLang {
         "mix" = Mix([Id; 2]),
         Num(Concentration),
         "+" = Add([Id; 2]),
@@ -116,21 +114,13 @@ impl CostFunction<MixLang> for SillyCostFn {
     }
 }
 
-fn main() -> anyhow::Result<()> {
-    let args = Args::try_parse()?;
-    handle_args(args);
-    Ok(())
-}
-
-fn handle_args(args: Args) {
-    let start = format!("({})", args.target_concentration).parse().unwrap();
-
-    let time_limit = args.time_limit;
-
-    println!(
-        "Starting to equality saturation, this will take ~{} seconds",
-        time_limit
-    );
+/// Saturate to find out an optimized sequence according to the cost function.
+pub fn saturate(
+    target_concentration: f64,
+    time_limit: u64,
+    input_space: HashSet<Concentration>,
+) -> anyhow::Result<Sequence> {
+    let start = format!("({})", target_concentration).parse()?;
     let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
         .with_expr(&start)
         .with_node_limit(10000000000000000)
@@ -140,20 +130,17 @@ fn handle_args(args: Args) {
 
     runner.print_report();
 
-    let input_space = args
-        .input_space
-        .iter()
-        .map(|concentration| Concentration::from_f64(*concentration))
-        .collect();
-
     let extractor = Extractor::new(
         &runner.egraph,
-        SillyCostFn::new(
-            input_space,
-            Concentration::from_f64(args.target_concentration),
-        ),
+        SillyCostFn::new(input_space, Concentration::from_f64(target_concentration)),
     );
+
     let (cost, best_expr) = extractor.find_best(runner.roots[0]);
-    println!("Optimized sequence: {}", best_expr);
-    println!("Cost: {:?}", cost);
+    let sequence = Sequence { cost, best_expr };
+    Ok(sequence)
+}
+
+pub struct Sequence {
+    pub cost: f64,
+    pub best_expr: RecExpr<MixLang>,
 }
