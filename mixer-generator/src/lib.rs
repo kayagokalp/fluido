@@ -1,4 +1,3 @@
-mod cmd;
 pub mod concentration;
 
 use concentration::Concentration;
