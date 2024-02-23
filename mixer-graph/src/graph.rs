@@ -12,19 +12,19 @@ impl Graph {
     fn new() -> Self {
         Self {
             graph: DiGraph::new(),
-            node_lookup: HashMap::new()
+            node_lookup: HashMap::new(),
         }
     }
 
     fn add_expr(&mut self, expr: &Expr) -> NodeIndex {
         if let Some(&index) = self.node_lookup.get(expr) {
             index
-        }else {
+        } else {
             let index = self.graph.add_node(expr.clone());
             self.node_lookup.insert(expr.clone(), index);
 
             match expr {
-                Expr::Number(_) => {},
+                Expr::Number(_) => {}
                 Expr::Mix(left, right) => {
                     let left_index = self.add_expr(left);
                     let right_index = self.add_expr(right);
@@ -37,23 +37,25 @@ impl Graph {
     }
 
     pub fn dot(&self) -> String {
-
         format!(
-                "{:?}",
-                petgraph::dot::Dot::with_attr_getters(
-                    &self.graph,
-                    &[petgraph::dot::Config::NodeNoLabel, petgraph::dot::Config::EdgeNoLabel],
-                    &|_, er| format!("label = \"{:?}\"", er.weight()),
-                    &|_, nr| {
-                        let _node = &self.graph[nr.0];
-                        let node_label = match _node {
-                                Expr::Mix(_, _) => "mix".to_string(),
-                                Expr::Number(con) => format!("{}", con) ,
-                        };
-                        format!("label = {}", node_label)
-                    },
-                )
+            "{:?}",
+            petgraph::dot::Dot::with_attr_getters(
+                &self.graph,
+                &[
+                    petgraph::dot::Config::NodeNoLabel,
+                    petgraph::dot::Config::EdgeNoLabel
+                ],
+                &|_, er| format!("label = \"{:?}\"", er.weight()),
+                &|_, nr| {
+                    let _node = &self.graph[nr.0];
+                    let node_label = match _node {
+                        Expr::Mix(_, _) => "mix".to_string(),
+                        Expr::Number(con) => format!("{}", con),
+                    };
+                    format!("label = {}", node_label)
+                },
             )
+        )
     }
 }
 
