@@ -118,3 +118,15 @@ and saturation continues like this.
 ### Arithmetic Reasoning
 
 `egg` is a saturation tool, which does not have a 'explicit' notion of arithmetics. To be able to do arithmetic reasoning, we defined a `MixerLang` with some primitive operations such as `Add (+)`, `Sub (-)`. Once a mixer expression become something like `(mix (- ?a 0.001) (+ ?b 0.001))` it is merged with the initial expression `(mix ?a ?b)` as they are equivalent (the former derived from the latter by the differentiate-mixer rewrite rule). Once this merge operation happens, our analysis implementation is called. In which we evaluate the expression and add a `Num` node equivalent to this node representing the arithmetic operation. This way the results of arithmetic operations can be found and added into the egraph.
+
+
+### MixLang
+
+MixLang is the intermediate language defined for representing mixer graphs and operations. Currently it consists of following constructs:
+
+| Name         | Operand count  | Operand type(s)| Explanation                                                            | Symbolic 
+|--------------|----------------|----------------|------------------------------------------------------------------------|---------------------|
+| Num          | 1              | Constant       |  A consntant number, representing a specific concentration             | elem1               |
+| Add          | 2              | ID, ID         |  Addition of two e-nodes that are num (or equivalent to a num)         | elem1 + elem2       |
+| Sub          | 2              | ID, ID         |  Substraction of two e-nodes that are num (or equivalent to a num)     | elem1 - elem2       |
+| Mix          | 2              | ID, ID         |  Mixing of two e-nodes that are num (or equivalent to a num)           | (elem1 + elem2) / 2 |
