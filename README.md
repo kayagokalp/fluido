@@ -47,7 +47,7 @@ nix develop
 Example code comes with a CLI:
 
 ```console
-fluido-saturate --target-concentration 0.01 --input-space 0.04 --input-space 0 --time-limit 1
+fluido --target-concentration 0.01 --input-space 0.04 --input-space 0 --time-limit 1
 ```
 
 The command above will try to find output concentration of 0.01 using the provided input concentrations.
@@ -55,7 +55,7 @@ The command above will try to find output concentration of 0.01 using the provid
 Output for the above example:
 
 ```console
-> fluido-saturate --target-concentration 0.01 --input-space 0.04 --input-space 0 --time-limit 1
+> fluido --target-concentration 0.01 --input-space 0.04 --input-space 0 --time-limit 1
 
 Starting to equality saturation, this will take ~60 seconds
 Runner report
