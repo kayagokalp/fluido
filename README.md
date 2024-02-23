@@ -1,6 +1,6 @@
-# fluido-saturation
+# fluido
 
-A mixer searching experiment using equality saturation, more specifically `egg`.
+A mixer searching and scheduling experiment using equality saturation, more specifically `egg`.
 
 ## Building 
 
