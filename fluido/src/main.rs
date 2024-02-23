@@ -1,8 +1,11 @@
 mod cmd;
 
+use std::str::FromStr;
+
 use clap::Parser;
 use cmd::Args;
 use mixer_generator::concentration::Concentration;
+use mixer_graph::{parse::Expr, graph::Graph};
 
 fn main() -> anyhow::Result<()> {
     let args = Args::try_parse()?;
@@ -24,8 +27,13 @@ fn main() -> anyhow::Result<()> {
 
     let cost = generated_mixer_sequence.cost;
     let expr = generated_mixer_sequence.best_expr;
+    let parsed_expr = Expr::from_str(&format!("{expr}"))?;
+    let graph = Graph::from(&parsed_expr);
+
 
     println!("best expr: {expr}");
     println!("cost: {cost}");
+    let dot = graph.dot();
+    println!("{dot}");
     Ok(())
 }

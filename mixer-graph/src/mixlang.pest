@@ -1,0 +1,8 @@
+// The entry point of the grammar, which tries to parse an expression
+expression = { mix | float }
+// A rule to parse the mix operation, which contains two expressions
+mix = { "(" ~ "mix" ~ WS* ~ expression ~ WS+ ~ expression ~ ")" }
+// A rule to parse floating point numbers
+float = { "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+// Whitespace handling
+WS = _{ " " | "\t" | "\n" | "\r" }
