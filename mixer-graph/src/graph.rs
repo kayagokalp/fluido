@@ -1,39 +1,30 @@
-use std::collections::HashMap;
-
 use crate::parse::Expr;
 use petgraph::graph::{DiGraph, NodeIndex};
 
 pub struct Graph {
     graph: DiGraph<Expr, ()>,
-    node_lookup: HashMap<Expr, NodeIndex>,
 }
 
 impl Graph {
     fn new() -> Self {
         Self {
             graph: DiGraph::new(),
-            node_lookup: HashMap::new(),
         }
     }
 
     fn add_expr(&mut self, expr: &Expr) -> NodeIndex {
-        if let Some(&index) = self.node_lookup.get(expr) {
-            index
-        } else {
-            let index = self.graph.add_node(expr.clone());
-            self.node_lookup.insert(expr.clone(), index);
+        let index = self.graph.add_node(expr.clone());
 
-            match expr {
-                Expr::Number(_) => {}
-                Expr::Mix(left, right) => {
-                    let left_index = self.add_expr(left);
-                    let right_index = self.add_expr(right);
-                    self.graph.add_edge(index, left_index, ());
-                    self.graph.add_edge(index, right_index, ());
-                }
+        match expr {
+            Expr::Number(_) => {}
+            Expr::Mix(left, right) => {
+                let left_index = self.add_expr(left);
+                let right_index = self.add_expr(right);
+                self.graph.add_edge(index, left_index, ());
+                self.graph.add_edge(index, right_index, ());
             }
-            index
         }
+        index
     }
 
     pub fn dot(&self) -> String {
