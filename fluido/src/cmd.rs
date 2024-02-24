@@ -9,11 +9,19 @@ pub struct Args {
     pub target_concentration: f64,
 
     /// Input space, intial concentrations at hand.
-    /// example_input: [`0.2 0.3 0.4`]
+    /// example_input: `--input-space 0 --input-space 0.4`
     #[arg(short, long)]
     pub input_space: Vec<f64>,
 
     /// Time limit in seconds.
     #[arg(short, long)]
     pub time_limit: u64,
+
+    /// Show dot output of the produced mixer graph
+    #[arg(short, long)]
+    pub show_dot: bool,
+
+    /// Show flat ir output of the produced mixer.
+    #[arg(short, long)]
+    pub show_ir: bool,
 }

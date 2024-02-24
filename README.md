@@ -73,6 +73,9 @@ Optimized sequence: (mix 0 (mix 0 0.04))
 Cost: 0.0
 ```
 
+* DOT output of the produced mixer's computation graph can be seen with `--show-dot` flag.
+* flat-ir of the mixlang produced can be seen with `--show-ir` flag. 
+
 ## Details
 
 The saturation starts with a number, the target concentration, for the given example command above:
