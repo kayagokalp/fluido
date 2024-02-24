@@ -1,39 +1,45 @@
-use std::collections::HashMap;
-
 use crate::parse::Expr;
 use petgraph::graph::{DiGraph, NodeIndex};
 
 pub struct Graph {
     graph: DiGraph<Expr, ()>,
-    node_lookup: HashMap<Expr, NodeIndex>,
+    root: Option<NodeIndex>,
+}
+
+impl AsRef<DiGraph<Expr, ()>> for Graph {
+    fn as_ref(&self) -> &DiGraph<Expr, ()> {
+        &self.graph
+    }
 }
 
 impl Graph {
     fn new() -> Self {
         Self {
             graph: DiGraph::new(),
-            node_lookup: HashMap::new(),
+            root: None,
         }
     }
 
     fn add_expr(&mut self, expr: &Expr) -> NodeIndex {
-        if let Some(&index) = self.node_lookup.get(expr) {
-            index
-        } else {
-            let index = self.graph.add_node(expr.clone());
-            self.node_lookup.insert(expr.clone(), index);
-
-            match expr {
-                Expr::Number(_) => {}
-                Expr::Mix(left, right) => {
-                    let left_index = self.add_expr(left);
-                    let right_index = self.add_expr(right);
-                    self.graph.add_edge(index, left_index, ());
-                    self.graph.add_edge(index, right_index, ());
-                }
-            }
-            index
+        let index = self.graph.add_node(expr.clone());
+        if self.root.is_none() {
+            self.root = Some(index);
         }
+
+        match expr {
+            Expr::Number(_) => {}
+            Expr::Mix(left, right) => {
+                let left_index = self.add_expr(left);
+                let right_index = self.add_expr(right);
+                self.graph.add_edge(index, left_index, ());
+                self.graph.add_edge(index, right_index, ());
+            }
+        }
+        index
+    }
+
+    pub fn root_node(&self) -> Option<NodeIndex> {
+        self.root
     }
 
     pub fn dot(&self) -> String {
