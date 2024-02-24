@@ -15,7 +15,6 @@ pub enum Operand {
     VirtualRegister(usize),
 }
 
-
 impl std::fmt::Display for IROp {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -24,7 +23,6 @@ impl std::fmt::Display for IROp {
         }
     }
 }
-
 
 impl std::fmt::Display for Operand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
