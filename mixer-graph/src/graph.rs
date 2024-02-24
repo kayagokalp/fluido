@@ -3,17 +3,28 @@ use petgraph::graph::{DiGraph, NodeIndex};
 
 pub struct Graph {
     graph: DiGraph<Expr, ()>,
+    root: Option<NodeIndex>,
+}
+
+impl AsRef<DiGraph<Expr, ()>> for Graph {
+    fn as_ref(&self) -> &DiGraph<Expr, ()> {
+        &self.graph
+    }
 }
 
 impl Graph {
     fn new() -> Self {
         Self {
             graph: DiGraph::new(),
+            root: None,
         }
     }
 
     fn add_expr(&mut self, expr: &Expr) -> NodeIndex {
         let index = self.graph.add_node(expr.clone());
+        if self.root.is_none() {
+            self.root = Some(index);
+        }
 
         match expr {
             Expr::Number(_) => {}
@@ -25,6 +36,10 @@ impl Graph {
             }
         }
         index
+    }
+
+    pub fn root_node(&self) -> Option<NodeIndex> {
+        self.root
     }
 
     pub fn dot(&self) -> String {

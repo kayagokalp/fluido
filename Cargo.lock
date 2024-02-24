@@ -216,6 +216,7 @@ dependencies = [
  "clap",
  "mixer-generator",
  "mixer-graph",
+ "mixer-ir",
 ]
 
 [[package]]
@@ -333,6 +334,14 @@ dependencies = [
  "pest",
  "pest_derive",
  "petgraph",
+]
+
+[[package]]
+name = "mixer-ir"
+version = "0.0.0"
+dependencies = [
+ "mixer-generator",
+ "mixer-graph",
 ]
 
 [[package]]
