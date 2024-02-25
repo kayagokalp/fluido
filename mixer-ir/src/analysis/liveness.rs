@@ -13,7 +13,11 @@ impl AnalysisPass for LivenessAnalysis {
         let mut ir = ir_to_pass_over.clone();
         ir.reverse();
         for (ix, op) in ir.iter().enumerate() {
-            let mut live_set = live_regs.get(ix - 1).cloned().unwrap_or_else(HashSet::new);
+            let mut live_set = if ix != 0 {
+                live_regs.get(ix - 1).cloned().unwrap_or_else(HashSet::new)
+            } else {
+                HashSet::new()
+            };
             let target = match op {
                 IROp::Store(store_op) => &store_op.1,
                 IROp::Mix(mix_op) => &mix_op.2,
@@ -55,7 +59,7 @@ impl AnalysisPass for LivenessAnalysis {
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
+    use std::{collections::HashSet, str::FromStr};
 
     use mixer_graph::{graph::Graph, parse::Expr};
 
@@ -77,8 +81,9 @@ mod tests {
         let liveness_analysis = LivenessAnalysis {};
         let result = liveness_analysis.analyze(ir.clone());
 
-        dbg!(ir);
-        dbg!(result);
-        panic!()
+        let expected_sets = vec![HashSet::from([]), HashSet::from([0]), HashSet::from([0, 1])];
+        let result_sets = result.sets_per_ir;
+
+        assert_eq!(expected_sets, result_sets)
     }
 }
