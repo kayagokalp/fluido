@@ -28,4 +28,8 @@ pub struct Args {
     /// Show liveness analysis over the flat-ir produced.
     #[arg(short, long)]
     pub show_liveness: bool,
+
+    /// Show interference graph for the produced flat-ir.
+    #[arg(short, long)]
+    pub show_interference: bool,
 }
