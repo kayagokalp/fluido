@@ -24,7 +24,7 @@ pub struct Args {
     /// Show flat ir output of the produced mixer.
     #[arg(short, long)]
     pub show_ir: bool,
-  
+
     /// Show liveness analysis over the flat-ir produced.
     #[arg(short, long)]
     pub show_liveness: bool,
