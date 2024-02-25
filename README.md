@@ -75,6 +75,7 @@ Cost: 0.0
 
 * DOT output of the produced mixer's computation graph can be seen with `--show-dot` flag.
 * flat-ir of the mixlang produced can be seen with `--show-ir` flag. 
+* liveness analysis over flat-ir can be seen with `--show-liveness` flag.
 
 ## Details
 
