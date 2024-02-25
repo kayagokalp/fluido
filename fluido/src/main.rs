@@ -69,14 +69,8 @@ fn main() -> anyhow::Result<()> {
         println!("{}", interference_graph.dot())
     }
 
-    println!("trying to color the inference graph with 1 color");
-    if let Some(colors) = interference_graph.try_coloring(1) {
-        println!("{colors:?}");
-    }
-    println!("trying to color the inference graph with 2 colors");
-    if let Some(colors) = interference_graph.try_coloring(2) {
-        println!("{colors:?}");
-    }
+    let min_needed_color = interference_graph.find_min_color_count();
+    println!("need at least {min_needed_color} storage units.");
 
     Ok(())
 }
