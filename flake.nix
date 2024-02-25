@@ -17,13 +17,13 @@
       in rec {
         # For `nix build` & `nix run`:
         defaultPackage = naersk'.buildPackage {
-	  buildInputs = with pkgs; [ z3 ];
+	  buildInputs = with pkgs; [ z3 libiconv cmake ];
           src = ./.;
         };
 
         # For `nix develop` (optional, can be skipped):
         devShell = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [ rustc cargo z3 ];
+          nativeBuildInputs = with pkgs; [ rustc cargo z3 libiconv cmake ];
         };
       }
     );

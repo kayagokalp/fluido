@@ -68,5 +68,15 @@ fn main() -> anyhow::Result<()> {
     if args.show_interference {
         println!("{}", interference_graph.dot())
     }
+
+    println!("trying to color the inference graph with 1 color");
+    if let Some(colors) = interference_graph.try_coloring(1) {
+        println!("{colors:?}");
+    }
+    println!("trying to color the inference graph with 2 colors");
+    if let Some(colors) = interference_graph.try_coloring(2) {
+        println!("{colors:?}");
+    }
+
     Ok(())
 }
