@@ -7,3 +7,4 @@ edition = "2021"
 mixer-graph = { path = "../mixer-graph/" }
 mixer-generator = { path = "../mixer-generator/" }
 petgraph = "0.6.4"
+z3 = { version = "0.12", features = ["static-link-z3"] }
