@@ -59,7 +59,7 @@ impl InterferenceGraph {
                 //println!("unknown returned from the z3 solver for graph coloring");
                 return None;
             }
-            z3::SatResult::Sat => {} 
+            z3::SatResult::Sat => {}
         }
 
         let model = solver
@@ -85,7 +85,11 @@ impl InterferenceGraph {
     /// number of colors needed to color the graph.
     pub fn find_min_color_count(&self) -> u64 {
         let graph = &self.graph;
-        let max_degreee = graph.node_indices().map(|node_ix| graph.edges(node_ix).count()).max().expect("expected to find a maxdegree for the interference graph");
+        let max_degreee = graph
+            .node_indices()
+            .map(|node_ix| graph.edges(node_ix).count())
+            .max()
+            .expect("expected to find a maxdegree for the interference graph");
         let mut min_color_count = 1;
         let mut max_color_count = max_degreee + 1;
         let mut current_min = max_color_count;
@@ -96,8 +100,8 @@ impl InterferenceGraph {
                 if color_count < current_min {
                     current_min = color_count;
                 }
-                max_color_count  = color_count - 1;
-            }else {
+                max_color_count = color_count - 1;
+            } else {
                 min_color_count = color_count + 1;
             }
         }
