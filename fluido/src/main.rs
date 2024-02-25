@@ -38,12 +38,31 @@ fn main() -> anyhow::Result<()> {
         println!("{dot}");
     }
 
+    let mut ir_builder = mixer_ir::ir_builder::IRBuilder::default();
+    let ir_ops = ir_builder.build_ir(graph);
+
     if args.show_ir {
-        let mut ir_builder = mixer_ir::ir_builder::IRBuilder::default();
-        let ir_ops = ir_builder.build_ir(graph);
         for (op_index, op) in ir_ops.iter().enumerate() {
             println!("{} : {}", op_index, op)
         }
     }
+
+    let mut ir_pass_manager = mixer_ir::pass_manager::IRPassManager::new(ir_ops.clone(), vec![]);
+    // Register liveness analysis pass
+    let liveness_analysis = mixer_ir::analysis::liveness::LivenessAnalysis::default();
+    ir_pass_manager.register_analysis_pass(&liveness_analysis);
+    let analysis_results = ir_pass_manager.apply_analysis_passes();
+    if args.show_liveness {
+        // Print liveness analysis result with flat-ir next to it.
+        println!("ix  |  ir  |  live vreg set |");
+        for (ix, (ir, liveset)) in ir_ops
+            .iter()
+            .zip(&analysis_results["liveness"].sets_per_ir)
+            .enumerate()
+        {
+            println!("{} : {} --- {:?}", ix, ir, liveset)
+        }
+    }
+
     Ok(())
 }

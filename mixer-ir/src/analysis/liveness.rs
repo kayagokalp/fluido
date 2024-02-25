@@ -5,12 +5,13 @@ use crate::{
     pass_manager::{AnalysisPass, AnalysisResult},
 };
 
+#[derive(Default)]
 pub struct LivenessAnalysis {}
 
 impl AnalysisPass for LivenessAnalysis {
-    fn analyze(&self, ir_to_pass_over: Vec<IROp>) -> crate::pass_manager::AnalysisResult {
+    fn analyze(&self, ir_to_pass_over: &[IROp]) -> crate::pass_manager::AnalysisResult {
         let mut live_regs = vec![];
-        let mut ir = ir_to_pass_over.clone();
+        let mut ir = ir_to_pass_over.to_vec();
         ir.reverse();
         for (ix, op) in ir.iter().enumerate() {
             let mut live_set = if ix != 0 {
@@ -55,6 +56,10 @@ impl AnalysisPass for LivenessAnalysis {
             sets_per_ir: live_regs,
         }
     }
+
+    fn pass_name(&self) -> &str {
+        "liveness"
+    }
 }
 
 #[cfg(test)]
@@ -79,7 +84,7 @@ mod tests {
         let mix_expr = "(mix 0.2 0.2)";
         let ir = ir_from_str(mix_expr);
         let liveness_analysis = LivenessAnalysis {};
-        let result = liveness_analysis.analyze(ir.clone());
+        let result = liveness_analysis.analyze(&ir);
 
         let expected_sets = vec![HashSet::from([]), HashSet::from([0]), HashSet::from([0, 1])];
         let result_sets = result.sets_per_ir;
