@@ -6,6 +6,7 @@ use clap::Parser;
 use cmd::Args;
 use mixer_generator::concentration::Concentration;
 use mixer_graph::{graph::Graph, parse::Expr};
+use mixer_ir::regalloc::interference_graph::InterferenceGraphBuilder;
 
 fn main() -> anyhow::Result<()> {
     let args = Args::try_parse()?;
@@ -52,17 +53,20 @@ fn main() -> anyhow::Result<()> {
     let liveness_analysis = mixer_ir::analysis::liveness::LivenessAnalysis::default();
     ir_pass_manager.register_analysis_pass(&liveness_analysis);
     let analysis_results = ir_pass_manager.apply_analysis_passes();
+    let liveness_result = &analysis_results["liveness"];
     if args.show_liveness {
         // Print liveness analysis result with flat-ir next to it.
         println!("ix  |  ir  |  live vreg set |");
-        for (ix, (ir, liveset)) in ir_ops
-            .iter()
-            .zip(&analysis_results["liveness"].sets_per_ir)
-            .enumerate()
-        {
+        for (ix, (ir, liveset)) in ir_ops.iter().zip(&liveness_result.sets_per_ir).enumerate() {
             println!("{} : {} --- {:?}", ix, ir, liveset)
         }
     }
 
+    let interference_graph_builder = InterferenceGraphBuilder::new(&liveness_result.sets_per_ir);
+    let interference_graph = interference_graph_builder.build();
+
+    if args.show_interference {
+        println!("{}", interference_graph.dot())
+    }
     Ok(())
 }
