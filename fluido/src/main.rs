@@ -42,8 +42,6 @@ fn main() -> anyhow::Result<()> {
     let ir_ops = ir_builder.build_ir(graph);
 
     if args.show_ir {
-        let mut ir_builder = mixer_ir::ir_builder::IRBuilder::default();
-        let ir_ops = ir_builder.build_ir(graph);
         for (op_index, op) in ir_ops.iter().enumerate() {
             println!("{} : {}", op_index, op)
         }
