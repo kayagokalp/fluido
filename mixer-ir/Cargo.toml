@@ -5,6 +5,6 @@ edition = "2021"
 
 [dependencies]
 mixer-generator = { path = "../mixer-generator/" }
-mixer-graph = { path = "../mixer-graph/" }
+fluido-types = { path = "../fluido-types/" }
 petgraph = "0.6.4"
 z3 = { version = "0.12", features = ["static-link-z3"] }

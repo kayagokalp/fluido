@@ -1,4 +1,4 @@
-use crate::parse::Expr;
+use fluido_types::expr::Expr;
 use petgraph::graph::{DiGraph, NodeIndex};
 
 pub struct Graph {

@@ -1,6 +1,8 @@
-use crate::ir::{IROp, Operand};
-use mixer_generator::concentration::Concentration;
-use mixer_graph::{graph::Graph, parse::Expr};
+use crate::{
+    graph::Graph,
+    ir::{IROp, Operand},
+};
+use fluido_types::{concentration::Concentration, expr::Expr};
 
 #[derive(Debug, Default)]
 pub struct IRBuilder {

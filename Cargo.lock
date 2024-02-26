@@ -284,9 +284,38 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "fluido-parse",
+ "fluido-types",
  "mixer-generator",
- "mixer-graph",
  "mixer-ir",
+]
+
+[[package]]
+name = "fluido-core"
+version = "0.0.0"
+dependencies = [
+ "fluido-parse",
+ "fluido-types",
+ "mixer-generator",
+ "thiserror",
+]
+
+[[package]]
+name = "fluido-parse"
+version = "0.0.0"
+dependencies = [
+ "fluido-types",
+ "mixer-generator",
+ "pest",
+ "pest_derive",
+ "petgraph",
+]
+
+[[package]]
+name = "fluido-types"
+version = "0.0.0"
+dependencies = [
+ "thiserror",
 ]
 
 [[package]]
@@ -428,24 +457,15 @@ dependencies = [
  "anyhow",
  "clap",
  "egg",
-]
-
-[[package]]
-name = "mixer-graph"
-version = "0.0.0"
-dependencies = [
- "mixer-generator",
- "pest",
- "pest_derive",
- "petgraph",
+ "fluido-types",
 ]
 
 [[package]]
 name = "mixer-ir"
 version = "0.0.0"
 dependencies = [
+ "fluido-types",
  "mixer-generator",
- "mixer-graph",
  "petgraph",
  "z3",
 ]

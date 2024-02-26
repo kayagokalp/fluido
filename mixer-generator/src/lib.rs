@@ -1,7 +1,5 @@
-pub mod concentration;
-
-use concentration::Concentration;
 use egg::{rewrite as rw, *};
+use fluido_types::concentration::Concentration;
 use std::{collections::HashSet, hash::Hash, time::Duration};
 
 define_language! {
@@ -115,9 +113,9 @@ impl CostFunction<MixLang> for SillyCostFn {
 
 /// Saturate to find out an optimized sequence according to the cost function.
 pub fn saturate(
-    target_concentration: f64,
+    target_concentration: Concentration,
     time_limit: u64,
-    input_space: HashSet<Concentration>,
+    input_space: &[Concentration],
 ) -> anyhow::Result<Sequence> {
     let start = format!("({})", target_concentration).parse()?;
     let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
@@ -129,9 +127,11 @@ pub fn saturate(
 
     runner.print_report();
 
+    let input_space = input_space.iter().cloned().collect::<HashSet<_>>();
+
     let extractor = Extractor::new(
         &runner.egraph,
-        SillyCostFn::new(input_space, Concentration::from_f64(target_concentration)),
+        SillyCostFn::new(input_space, target_concentration),
     );
 
     let (cost, best_expr) = extractor.find_best(runner.roots[0]);

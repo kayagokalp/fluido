@@ -1,0 +1,10 @@
+[package]
+name = "fluido-core"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+fluido-types = { path = "../fluido-types" }
+fluido-parse = { path = "../fluido-parse" }
+mixer-generator = { path = "../mixer-generator/" }
+thiserror = "1.0.57"

@@ -1,10 +1,11 @@
 [package]
-name = "mixer-graph"
+name = "fluido-parse"
 version = "0.0.0"
 edition = "2021"
 
 [dependencies]
 mixer-generator = { path = "../mixer-generator/" }
+fluido-types = { path = "../fluido-types/" }
 pest = "2.7.7"
 pest_derive = "2.7.7"
 petgraph = "0.6.4"

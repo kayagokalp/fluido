@@ -1,3 +1,3 @@
 [workspace]
 resolver = "2"
-members = ["mixer-generator", "fluido", "mixer-graph", "mixer-ir"]
+members = ["mixer-generator", "fluido", "fluido-parse", "mixer-ir", "fluido-core", "fluido-types"]

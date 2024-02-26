@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.79"
 clap = { version = "4.5.0", features = ["derive"] }
+fluido-types = { path = "../fluido-types/" }
 mixer-generator = { path = "../mixer-generator/" }
-mixer-graph = { path = "../mixer-graph/" }
+fluido-parse = { path = "../fluido-parse//" }
 mixer-ir = { path = "../mixer-ir/" }

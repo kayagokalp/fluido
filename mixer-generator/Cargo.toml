@@ -7,3 +7,4 @@ edition = "2021"
 anyhow = "1.0.79"
 clap = { version = "4.5.0", features = ["derive"] }
 egg = "0.9.5"
+fluido-types = { path = "../fluido-types/" }
