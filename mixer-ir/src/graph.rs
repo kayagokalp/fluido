@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn test_single_number() {
         let expr_str = "0.5";
-        let expr: Expr = expr_str.parse().expect("Failed to parse expression");
+        let expr = Expr::parse(expr_str);
         let graph_wrapper: Graph = (&expr).into();
 
         assert_eq!(graph_wrapper.graph.node_count(), 1);

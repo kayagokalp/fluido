@@ -1,5 +1,5 @@
 use egg::{rewrite as rw, *};
-use fluido_types::concentration::Concentration;
+use fluido_types::{concentration::Concentration, error::MixerGenerationError};
 use std::{collections::HashSet, hash::Hash, time::Duration};
 
 define_language! {
@@ -116,8 +116,10 @@ pub fn saturate(
     target_concentration: Concentration,
     time_limit: u64,
     input_space: &[Concentration],
-) -> anyhow::Result<Sequence> {
-    let start = format!("({})", target_concentration).parse()?;
+) -> Result<Sequence, MixerGenerationError> {
+    let start = format!("({})", target_concentration)
+        .parse()
+        .map_err(|_| MixerGenerationError::FailedToParseTarget(target_concentration.clone()))?;
     let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
         .with_expr(&start)
         .with_node_limit(10000000000000000)

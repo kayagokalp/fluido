@@ -43,9 +43,9 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
 
 #[cfg(test)]
 mod tests {
-    use super::Expr;
-    use crate::parse::Parse;
-    use fluido_types::concentration::Concentration;
+    use fluido_types::{concentration::Concentration, expr::Expr};
+
+    use crate::parser::Parse;
 
     #[test]
     fn pase_single_num() {

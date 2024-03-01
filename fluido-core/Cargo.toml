@@ -7,4 +7,5 @@ edition = "2021"
 fluido-types = { path = "../fluido-types" }
 fluido-parse = { path = "../fluido-parse" }
 mixer-generator = { path = "../mixer-generator/" }
+mixer-ir = { path = "../mixer-ir" }
 thiserror = "1.0.57"

@@ -284,10 +284,8 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
- "fluido-parse",
+ "fluido-core",
  "fluido-types",
- "mixer-generator",
- "mixer-ir",
 ]
 
 [[package]]
@@ -297,6 +295,7 @@ dependencies = [
  "fluido-parse",
  "fluido-types",
  "mixer-generator",
+ "mixer-ir",
  "thiserror",
 ]
 
