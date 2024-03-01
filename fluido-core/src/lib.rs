@@ -1,4 +1,13 @@
 mod error;
+use fluido_generation::Sequence;
+use fluido_ir::{
+    analysis::liveness::LivenessAnalysis,
+    graph::Graph,
+    ir::IROp,
+    ir_builder::IRBuilder,
+    pass_manager::IRPassManager,
+    regalloc::interference_graph::{InterferenceGraph, InterferenceGraphBuilder},
+};
 use fluido_parse::parser::Parse;
 use fluido_types::{
     concentration::Concentration,
@@ -6,15 +15,6 @@ use fluido_types::{
         FluidoError, IRGenerationError, InterefenceGraphGenerationError, MixerGenerationError,
     },
     expr::Expr,
-};
-use mixer_generator::Sequence;
-use mixer_ir::{
-    analysis::liveness::LivenessAnalysis,
-    graph::Graph,
-    ir::IROp,
-    ir_builder::IRBuilder,
-    pass_manager::IRPassManager,
-    regalloc::interference_graph::{InterferenceGraph, InterferenceGraphBuilder},
 };
 
 /// A mixer generator for a specific target concentration from a given input space.
@@ -115,7 +115,7 @@ fn generate_mixer_sequence(
     match mixer_generator {
         MixerGenerator::EquailtySaturation => {
             let generated_mixer_sequence =
-                mixer_generator::saturate(target_concentration, time_limit, input_space)?;
+                fluido_generation::saturate(target_concentration, time_limit, input_space)?;
             Ok(generated_mixer_sequence)
         }
     }

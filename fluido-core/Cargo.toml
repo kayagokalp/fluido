@@ -6,6 +6,6 @@ edition = "2021"
 [dependencies]
 fluido-types = { path = "../fluido-types" }
 fluido-parse = { path = "../fluido-parse" }
-mixer-generator = { path = "../mixer-generator/" }
-mixer-ir = { path = "../mixer-ir" }
+fluido-generation = { path = "../fluido-generation/" }
+fluido-ir = { path = "../fluido-ir" }
 thiserror = "1.0.57"

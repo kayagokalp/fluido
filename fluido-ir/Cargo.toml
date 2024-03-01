@@ -1,10 +1,10 @@
 [package]
-name = "mixer-ir"
+name = "fluido-ir"
 version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-mixer-generator = { path = "../mixer-generator/" }
+fluido-generation= { path = "../fluido-generation/" }
 fluido-types = { path = "../fluido-types/" }
 petgraph = "0.6.4"
 z3 = { version = "0.12", features = ["static-link-z3"] }

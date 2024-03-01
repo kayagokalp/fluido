@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-mixer-generator = { path = "../mixer-generator/" }
+fluido-generation = { path = "../fluido-generation/" }
 fluido-types = { path = "../fluido-types/" }
 pest = "2.7.7"
 pest_derive = "2.7.7"

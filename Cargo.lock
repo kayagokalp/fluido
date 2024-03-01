@@ -292,19 +292,39 @@ dependencies = [
 name = "fluido-core"
 version = "0.0.0"
 dependencies = [
+ "fluido-generation",
+ "fluido-ir",
  "fluido-parse",
  "fluido-types",
- "mixer-generator",
- "mixer-ir",
  "thiserror",
+]
+
+[[package]]
+name = "fluido-generation"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "egg",
+ "fluido-types",
+]
+
+[[package]]
+name = "fluido-ir"
+version = "0.0.0"
+dependencies = [
+ "fluido-generation",
+ "fluido-types",
+ "petgraph",
+ "z3",
 ]
 
 [[package]]
 name = "fluido-parse"
 version = "0.0.0"
 dependencies = [
+ "fluido-generation",
  "fluido-types",
- "mixer-generator",
  "pest",
  "pest_derive",
  "petgraph",
@@ -448,26 +468,6 @@ name = "minimal-lexical"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
-
-[[package]]
-name = "mixer-generator"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "egg",
- "fluido-types",
-]
-
-[[package]]
-name = "mixer-ir"
-version = "0.0.0"
-dependencies = [
- "fluido-types",
- "mixer-generator",
- "petgraph",
- "z3",
-]
 
 [[package]]
 name = "nom"
