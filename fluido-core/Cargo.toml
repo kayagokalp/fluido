@@ -4,8 +4,8 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-fluido-types = { path = "../fluido-types" }
-fluido-parse = { path = "../fluido-parse" }
 fluido-generation = { path = "../fluido-generation/" }
 fluido-ir = { path = "../fluido-ir" }
+fluido-parse = { path = "../fluido-parse" }
+fluido-types = { path = "../fluido-types" }
 thiserror = "1.0.57"
