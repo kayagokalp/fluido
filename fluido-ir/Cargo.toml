@@ -8,3 +8,6 @@ fluido-generation= { path = "../fluido-generation/" }
 fluido-types = { path = "../fluido-types/" }
 petgraph = "0.6.4"
 z3 = { version = "0.12", features = ["static-link-z3"] }
+
+[dev-dependencies]
+fluido-parse = { path = "../fluido-parse/" }

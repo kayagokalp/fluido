@@ -64,16 +64,14 @@ impl AnalysisPass for LivenessAnalysis {
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashSet, str::FromStr};
-
-    use mixer_graph::{graph::Graph, parse::Expr};
-
-    use crate::{ir::IROp, ir_builder::IRBuilder, pass_manager::AnalysisPass};
-
     use super::LivenessAnalysis;
+    use crate::{graph::Graph, ir::IROp, ir_builder::IRBuilder, pass_manager::AnalysisPass};
+    use fluido_parse::parser::Parse;
+    use fluido_types::expr::Expr;
+    use std::collections::HashSet;
 
     fn ir_from_str(input_str: &str) -> Vec<IROp> {
-        let mix_expr_parsed = Expr::from_str(input_str).unwrap();
+        let mix_expr_parsed = Expr::parse(input_str).unwrap();
         let mixer_graph = Graph::from(&mix_expr_parsed);
         let mut ir_builder = IRBuilder::default();
         ir_builder.build_ir(mixer_graph)

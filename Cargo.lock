@@ -314,6 +314,7 @@ name = "fluido-ir"
 version = "0.0.0"
 dependencies = [
  "fluido-generation",
+ "fluido-parse",
  "fluido-types",
  "petgraph",
  "z3",
