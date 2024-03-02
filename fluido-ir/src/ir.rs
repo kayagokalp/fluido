@@ -1,4 +1,4 @@
-use mixer_generator::concentration::Concentration;
+use fluido_types::concentration::Concentration;
 
 #[derive(Debug, Clone)]
 /// Possible IR operations for mixlang.

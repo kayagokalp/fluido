@@ -1,0 +1,11 @@
+[package]
+name = "fluido-parse"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+fluido-generation = { path = "../fluido-generation/" }
+fluido-types = { path = "../fluido-types/" }
+pest = "2.7.7"
+pest_derive = "2.7.7"
+petgraph = "0.6.4"

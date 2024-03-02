@@ -1,4 +1,4 @@
-use crate::parse::Expr;
+use fluido_types::expr::Expr;
 use petgraph::graph::{DiGraph, NodeIndex};
 
 pub struct Graph {
@@ -75,12 +75,14 @@ impl From<&Expr> for Graph {
 
 #[cfg(test)]
 mod tests {
+    use fluido_parse::parser::Parse;
+
     use super::*;
 
     #[test]
     fn test_single_number() {
         let expr_str = "0.5";
-        let expr: Expr = expr_str.parse().expect("Failed to parse expression");
+        let expr = Expr::parse(expr_str).unwrap();
         let graph_wrapper: Graph = (&expr).into();
 
         assert_eq!(graph_wrapper.graph.node_count(), 1);
@@ -90,7 +92,7 @@ mod tests {
     #[test]
     fn test_simple_mix() {
         let expr_str = "(mix 0.1 0.2)";
-        let expr: Expr = expr_str.parse().expect("Failed to parse expression");
+        let expr = Expr::parse(expr_str).unwrap();
         let graph_wrapper: Graph = (&expr).into();
 
         assert_eq!(graph_wrapper.graph.node_count(), 3); // One Mix and two Numbers
@@ -100,7 +102,7 @@ mod tests {
     #[test]
     fn test_nested_mix() {
         let expr_str = "(mix(mix 0.0 0.2) 0.1)";
-        let expr: Expr = expr_str.parse().expect("Failed to parse expression");
+        let expr = Expr::parse(expr_str).unwrap();
         let graph_wrapper: Graph = (&expr).into();
 
         assert_eq!(graph_wrapper.graph.node_count(), 5); // Two Mix and three Numbers
