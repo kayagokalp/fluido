@@ -1,4 +1,8 @@
-use std::{num::ParseFloatError, ops::{Sub, Add}, str::FromStr};
+use std::{
+    num::ParseFloatError,
+    ops::{Add, Sub},
+    str::FromStr,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Concentration {
@@ -91,7 +95,6 @@ mod tests {
 
         assert_eq!(conc_a, conc_b)
     }
-
 
     #[test]
     fn test_addition() {

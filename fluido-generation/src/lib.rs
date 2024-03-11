@@ -27,7 +27,8 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
                 let node_a_num = egraph[node_a].data.as_ref();
                 let node_b_num = egraph[node_b].data.as_ref();
 
-                node_a_num.and_then(|node_a| node_b_num.map(|node_b| node_a.clone() + node_b.clone()))
+                node_a_num
+                    .and_then(|node_a| node_b_num.map(|node_b| node_a.clone() + node_b.clone()))
             }
             MixLang::Sub(sub) => {
                 let node_a = sub[0];
@@ -36,7 +37,8 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
                 let node_a_num = egraph[node_a].data.as_ref();
                 let node_b_num = egraph[node_b].data.as_ref();
 
-                node_a_num.and_then(|node_a| node_b_num.map(|node_b| node_a.clone() - node_b.clone()))
+                node_a_num
+                    .and_then(|node_a| node_b_num.map(|node_b| node_a.clone() - node_b.clone()))
             }
         }
     }
