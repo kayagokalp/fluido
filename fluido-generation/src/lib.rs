@@ -14,12 +14,12 @@ define_language! {
 struct ArithmeticAnalysis;
 
 impl Analysis<MixLang> for ArithmeticAnalysis {
-    type Data = Option<i64>; // Possible to store computed concentration or target info
+    type Data = Option<Concentration>;
 
     fn make(egraph: &EGraph<MixLang, Self>, enode: &MixLang) -> Self::Data {
         match enode {
             MixLang::Mix(_) => None,
-            MixLang::Num(num) => Some(num.wrapped),
+            MixLang::Num(num) => Some(num.clone()),
             MixLang::Add(add) => {
                 let node_a = add[0];
                 let node_b = add[1];
@@ -27,7 +27,8 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
                 let node_a_num = egraph[node_a].data.as_ref();
                 let node_b_num = egraph[node_b].data.as_ref();
 
-                node_a_num.and_then(|node_a| node_b_num.map(|node_b| node_a + node_b))
+                node_a_num
+                    .and_then(|node_a| node_b_num.map(|node_b| node_a.clone() + node_b.clone()))
             }
             MixLang::Sub(sub) => {
                 let node_a = sub[0];
@@ -36,7 +37,8 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
                 let node_a_num = egraph[node_a].data.as_ref();
                 let node_b_num = egraph[node_b].data.as_ref();
 
-                node_a_num.and_then(|node_a| node_b_num.map(|node_b| node_a - node_b))
+                node_a_num
+                    .and_then(|node_a| node_b_num.map(|node_b| node_a.clone() - node_b.clone()))
             }
         }
     }
@@ -49,8 +51,8 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
     }
 
     fn modify(egraph: &mut EGraph<MixLang, Self>, id: Id) {
-        if let Some(data) = egraph[id].data {
-            let added = egraph.add(MixLang::Num(Concentration { wrapped: data }));
+        if let Some(data) = &egraph[id].data {
+            let added = egraph.add(MixLang::Num(data.clone()));
             egraph.union(id, added);
         }
     }
