@@ -1,4 +1,3 @@
-mod error;
 use fluido_generation::Sequence;
 use fluido_ir::{
     analysis::liveness::LivenessAnalysis,
