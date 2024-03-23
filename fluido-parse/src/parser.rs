@@ -34,7 +34,7 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
         }
         Rule::float => {
             let num = pair.as_str().parse::<f64>().unwrap();
-            let concentration = Concentration::from_f64(num);
+            let concentration = Concentration::from(num);
             Ok(Expr::Number(concentration))
         }
         _ => unreachable!(),
@@ -51,7 +51,7 @@ mod tests {
     fn pase_single_num() {
         let input_str = "0.2";
         let expr = Expr::parse(input_str).unwrap();
-        let expected_expr = Expr::Number(Concentration::from_f64(0.2));
+        let expected_expr = Expr::Number(Concentration::from(0.2));
         assert_eq!(expected_expr, expr)
     }
 
@@ -59,8 +59,8 @@ mod tests {
     fn pase_single_mix() {
         let input_str = "(mix 0.2 0.3)";
         let expr = Expr::parse(input_str).unwrap();
-        let zero_point_two = Expr::Number(Concentration::from_f64(0.2));
-        let zero_point_three = Expr::Number(Concentration::from_f64(0.3));
+        let zero_point_two = Expr::Number(Concentration::from(0.2));
+        let zero_point_three = Expr::Number(Concentration::from(0.3));
         let expected_expr = Expr::Mix(Box::new(zero_point_two), Box::new(zero_point_three));
         assert_eq!(expected_expr, expr)
     }
@@ -69,11 +69,11 @@ mod tests {
     fn parse_nested_mix() {
         let input_str = "(mix 0.2 (mix 0.3 0.4))";
         let expr = Expr::parse(input_str).unwrap();
-        let zero_point_three = Expr::Number(Concentration::from_f64(0.3));
-        let zero_point_four = Expr::Number(Concentration::from_f64(0.4));
+        let zero_point_three = Expr::Number(Concentration::from(0.3));
+        let zero_point_four = Expr::Number(Concentration::from(0.4));
 
         let first_mix = Expr::Mix(Box::new(zero_point_three), Box::new(zero_point_four));
-        let zero_point_two = Expr::Number(Concentration::from_f64(0.2));
+        let zero_point_two = Expr::Number(Concentration::from(0.2));
         let expected_expr = Expr::Mix(Box::new(zero_point_two), Box::new(first_mix));
 
         assert_eq!(expected_expr, expr)
