@@ -16,11 +16,11 @@ fn handle_args(args: Args) -> anyhow::Result<()> {
         "Starting to equality saturation, this will take ~{} seconds to finish.",
         args.time_limit
     );
-    let target_concentration = Concentration::from_f64(args.target_concentration);
+    let target_concentration = Concentration::from(args.target_concentration);
     let input_space = args
         .input_space
         .iter()
-        .map(|input_concentration| Concentration::from_f64(*input_concentration))
+        .map(|input_concentration| Concentration::from(*input_concentration))
         .collect::<Vec<_>>();
     let config = Config::from(args);
 

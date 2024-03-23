@@ -10,12 +10,11 @@ pub struct Concentration {
 }
 
 impl Concentration {
-    pub const EPSILON: f64 = 0.0001;
-    pub fn from_f64(val: f64) -> Self {
-        Self {
-            wrapped: (val / Self::EPSILON).round() as i64,
-        }
+    pub fn new(wrapped: i64) -> Self {
+        Self { wrapped }
     }
+
+    pub const EPSILON: f64 = 0.0001;
 }
 
 impl Sub for Concentration {
@@ -90,8 +89,8 @@ mod tests {
         let num_a = 0.00005;
         let num_b = 0.00009;
 
-        let conc_a = Concentration::from_f64(num_a);
-        let conc_b = Concentration::from_f64(num_b);
+        let conc_a = Concentration::from(num_a);
+        let conc_b = Concentration::from(num_b);
 
         assert_eq!(conc_a, conc_b)
     }
