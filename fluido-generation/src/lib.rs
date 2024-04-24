@@ -156,26 +156,20 @@ fn generate_mix_rules() -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
     ]
 }
 
-struct SillyCostFn<'a> {
+struct SillyCostFn {
     input_space: HashSet<Concentration>,
     target: Concentration,
-    egraph: &'a EGraph<MixLang, ArithmeticAnalysis>,
 }
 
-impl<'a> SillyCostFn<'a> {
-    fn new(
-        input_space: HashSet<Concentration>,
-        target: Concentration,
-        egraph: &'a EGraph<MixLang, ArithmeticAnalysis>,
-    ) -> Self {
+impl SillyCostFn {
+    fn new(input_space: HashSet<Concentration>, target: Concentration) -> Self {
         Self {
             input_space,
             target,
-            egraph,
         }
     }
 }
-impl CostFunction<MixLang> for SillyCostFn<'_> {
+impl CostFunction<MixLang> for SillyCostFn {
     type Cost = f64;
 
     fn cost<C>(&mut self, enode: &MixLang, mut costs: C) -> Self::Cost
@@ -184,15 +178,11 @@ impl CostFunction<MixLang> for SillyCostFn<'_> {
     {
         let op_cost = match enode {
             MixLang::Mix(_) => 0.0,
-            MixLang::Fluid(fluid) => {
-                let concentration_id = fluid[0];
-                let concentration = self.egraph[concentration_id]
-                    .data
-                    .clone()
-                    .expect_concentration();
-                if concentration == self.target {
+            MixLang::Fluid(_) => 0.0,
+            MixLang::Concentration(concentration) => {
+                if *concentration == self.target {
                     f64::MAX
-                } else if self.input_space.contains(&concentration) {
+                } else if self.input_space.contains(concentration) {
                     0.0
                 } else {
                     let closest_val = self
@@ -204,6 +194,7 @@ impl CostFunction<MixLang> for SillyCostFn<'_> {
                     closest_val.unwrap() as f64
                 }
             }
+            MixLang::Vol(_) => 0.0,
             _ => 100.0,
         };
 
@@ -233,7 +224,7 @@ pub fn saturate(
 
     let extractor = Extractor::new(
         &runner.egraph,
-        SillyCostFn::new(input_space, target_concentration, &runner.egraph),
+        SillyCostFn::new(input_space, target_concentration),
     );
 
     let (cost, best_expr) = extractor.find_best(runner.roots[0]);

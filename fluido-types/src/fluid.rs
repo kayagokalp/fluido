@@ -19,7 +19,7 @@ pub enum FluidParseError {
     MissingParanthesis,
     MissingFluidKeyword,
     MissingSpace,
-    MissingVolAndOrConcentration
+    MissingVolAndOrConcentration,
 }
 
 impl FromStr for Fluid {
@@ -31,8 +31,13 @@ impl FromStr for Fluid {
             s.remove(0);
             s.pop();
             let mut split_from_fluid_keyword = s.split("fluid");
-            let _= split_from_fluid_keyword.next().ok_or(FluidParseError::MissingFluidKeyword)?;
-            let s = split_from_fluid_keyword.next().ok_or(FluidParseError::MissingVolAndOrConcentration)?.trim();
+            let _ = split_from_fluid_keyword
+                .next()
+                .ok_or(FluidParseError::MissingFluidKeyword)?;
+            let s = split_from_fluid_keyword
+                .next()
+                .ok_or(FluidParseError::MissingVolAndOrConcentration)?
+                .trim();
             let mut splitted_s = s.split(' ');
             let concentration_str = splitted_s
                 .next()

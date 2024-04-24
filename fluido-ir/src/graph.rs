@@ -26,14 +26,11 @@ impl Graph {
             self.root = Some(index);
         }
 
-        match expr {
-            Expr::Mix(left, right) => {
-                let left_index = self.add_expr(left);
-                let right_index = self.add_expr(right);
-                self.graph.add_edge(index, left_index, ());
-                self.graph.add_edge(index, right_index, ());
-            }
-            _ => {}
+        if let Expr::Mix(left, right) = expr {
+            let left_index = self.add_expr(left);
+            let right_index = self.add_expr(right);
+            self.graph.add_edge(index, left_index, ());
+            self.graph.add_edge(index, right_index, ());
         }
         index
     }

@@ -53,15 +53,15 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
 
 #[cfg(test)]
 mod tests {
-    use fluido_types::{concentration::Concentration, expr::Expr, fluid::Fluid};
     use crate::parser::Parse;
+    use fluido_types::{concentration::Concentration, expr::Expr, fluid::Fluid};
 
     #[test]
     fn parse_fluid() {
         let input_str = "(fluid 0.2 1)";
         let expr = Expr::parse(input_str).unwrap();
         let expected_conc = Concentration::from(0.2);
-        let expected_vol = 1; 
+        let expected_vol = 1;
         let expected_fluid = Expr::Fluid(Fluid::new(expected_conc, expected_vol));
         assert_eq!(expected_fluid, expr)
     }
@@ -71,7 +71,7 @@ mod tests {
         let input_str = "(mix (fluid 0.2 1) (fluid 0.3 1))";
         let expr = Expr::parse(input_str).unwrap();
         let unit_vol = 1u64;
-        
+
         let zero_point_two = Concentration::from(0.2);
         let zero_point_three = Concentration::from(0.3);
         let first_fluid = Expr::Fluid(Fluid::new(zero_point_two, unit_vol));
