@@ -1,8 +1,17 @@
 // The entry point of the grammar, which tries to parse an expression
-expression = { mix | float }
+expression = { mix | fluid }
+
 // A rule to parse the mix operation, which contains two expressions
-mix = { "(" ~ "mix" ~ WS* ~ expression ~ WS+ ~ expression ~ ")" }
+mix = { "(" ~ "mix" ~ WS* ~ expression ~ WS+ ~ expression ~ WS* ~ ")" }
+
+// A rule to parse the fluid operation, which takes two parameters
+fluid = { "(" ~ "fluid" ~ WS+ ~ float ~ WS+ ~ integer ~ WS* ~ ")" }
+
 // A rule to parse floating point numbers
 float = { "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+
+// A rule to parse integers
+integer = { "-"? ~ ASCII_DIGIT+ }
+
 // Whitespace handling
 WS = _{ " " | "\t" | "\n" | "\r" }

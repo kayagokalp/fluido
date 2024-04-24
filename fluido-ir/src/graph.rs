@@ -27,13 +27,13 @@ impl Graph {
         }
 
         match expr {
-            Expr::Number(_) => {}
             Expr::Mix(left, right) => {
                 let left_index = self.add_expr(left);
                 let right_index = self.add_expr(right);
                 self.graph.add_edge(index, left_index, ());
                 self.graph.add_edge(index, right_index, ());
             }
+            _ => {}
         }
         index
     }
@@ -56,7 +56,9 @@ impl Graph {
                     let _node = &self.graph[nr.0];
                     let node_label = match _node {
                         Expr::Mix(_, _) => "mix".to_string(),
-                        Expr::Number(con) => format!("{}", con),
+                        Expr::Fluid(fl) => format!("{}", fl),
+                        Expr::Vol(vol) => format!("{}", vol),
+                        Expr::Concentration(con) => format!("{}", con),
                     };
                     format!("label = {}", node_label)
                 },
@@ -80,8 +82,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_single_number() {
-        let expr_str = "0.5";
+    fn test_single_fluid() {
+        let expr_str = "(fluid 0.5 1)";
         let expr = Expr::parse(expr_str).unwrap();
         let graph_wrapper: Graph = (&expr).into();
 
@@ -91,7 +93,7 @@ mod tests {
 
     #[test]
     fn test_simple_mix() {
-        let expr_str = "(mix 0.1 0.2)";
+        let expr_str = "(mix (fluid 0.1 1) (fluid 0.2 1))";
         let expr = Expr::parse(expr_str).unwrap();
         let graph_wrapper: Graph = (&expr).into();
 
@@ -101,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_nested_mix() {
-        let expr_str = "(mix(mix 0.0 0.2) 0.1)";
+        let expr_str = "(mix (mix (fluid 0.0 1) (fluid 0.2 1)) (fluid 0.1 1))";
         let expr = Expr::parse(expr_str).unwrap();
         let graph_wrapper: Graph = (&expr).into();
 

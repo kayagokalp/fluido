@@ -17,25 +17,30 @@ pub enum FluidParseError {
     InvalidFloatParse(ParseFloatError),
     InvalidVolumeParse(ParseIntError),
     MissingParanthesis,
-    MissingComma,
+    MissingFluidKeyword,
+    MissingSpace,
+    MissingVolAndOrConcentration
 }
 
 impl FromStr for Fluid {
     type Err = FluidParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.starts_with('[') && s.ends_with(']') {
+        if s.starts_with('(') && s.ends_with(')') {
             let mut s = s.to_string();
             s.remove(0);
             s.pop();
-            let mut splitted_s = s.split(',');
+            let mut split_from_fluid_keyword = s.split("fluid");
+            let _= split_from_fluid_keyword.next().ok_or(FluidParseError::MissingFluidKeyword)?;
+            let s = split_from_fluid_keyword.next().ok_or(FluidParseError::MissingVolAndOrConcentration)?.trim();
+            let mut splitted_s = s.split(' ');
             let concentration_str = splitted_s
                 .next()
-                .ok_or(FluidParseError::MissingComma)?
+                .ok_or(FluidParseError::MissingSpace)?
                 .trim();
             let unit_volume_str = splitted_s
                 .next()
-                .ok_or(FluidParseError::MissingComma)?
+                .ok_or(FluidParseError::MissingSpace)?
                 .trim();
 
             let concentration = Concentration::from_str(concentration_str)
@@ -153,7 +158,7 @@ mod tests {
 
     #[test]
     fn parse_fluid_str() {
-        let parsed_fluid = Fluid::from_str("[0.1,1]").unwrap();
+        let parsed_fluid = Fluid::from_str("(fluid 0.1 1)").unwrap();
         let expected_fluid = Fluid::new(0.1.into(), 1);
 
         assert_eq!(expected_fluid, parsed_fluid)
