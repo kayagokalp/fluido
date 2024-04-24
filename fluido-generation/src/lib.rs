@@ -148,12 +148,28 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
 fn generate_mix_rules() -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
     vec![
         rw!("differentiate-mixer-conc1";
-            "(mix (fluid ?a ?c) (fluid ?b ?c))" => "(mix (c- (fluid ?a ?c) (fluid 0.001 ?c)) (c+ (fluid ?b ?c) (fluid 0.001 ?c)))"),
+            "(mix (fluid ?a ?c) (fluid ?b ?c))" => "(mix (c- (fluid ?a ?c) (fluid 0.001 ?c)) (c+ (fluid ?b ?c) (fluid 0.001 ?c)))"
+             if concentration_valid("?a")),
         rw!("differentiate-mixer-conc2";
-            "(mix (fluid ?a ?c) (fluid ?b ?c))" => "(mix (c+ (fluid ?a ?c) (fluid 0.001 ?c)) (c- (fluid ?b ?c) (fluid 0.001 ?c)))"),
+            "(mix (fluid ?a ?c) (fluid ?b ?c))" => "(mix (c+ (fluid ?a ?c) (fluid 0.001 ?c)) (c- (fluid ?b ?c) (fluid 0.001 ?c)))"
+            if concentration_valid("?a")),
         rw!("expand-fluid";
             "(fluid ?a ?b)" => "(mix (fluid ?a ?b) (fluid ?a ?b))"),
     ]
+}
+
+fn concentration_valid(
+    concentration: &'static str,
+) -> impl Fn(&mut EGraph<MixLang, ArithmeticAnalysis>, Id, &Subst) -> bool {
+    let var_concentration: Var = concentration.parse().unwrap();
+    move |egraph, _, subst| {
+        let conc = subst[var_concentration];
+        let conc_node = &egraph[conc];
+
+        let concentration = conc_node.data.clone().expect_concentration();
+
+        concentration.valid()
+    }
 }
 
 struct SillyCostFn {
