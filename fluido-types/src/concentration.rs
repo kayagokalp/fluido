@@ -14,6 +14,10 @@ impl Concentration {
         Self { wrapped }
     }
 
+    pub fn valid(&self) -> bool {
+        self.wrapped >= 0 && self.wrapped as f64 <= 1.0f64 / Self::EPSILON
+    }
+
     pub const EPSILON: f64 = 0.0001;
 }
 
