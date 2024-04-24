@@ -304,7 +304,6 @@ name = "fluido-generation"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "clap",
  "egg",
  "fluido-types",
 ]
@@ -335,6 +334,7 @@ dependencies = [
 name = "fluido-types"
 version = "0.0.0"
 dependencies = [
+ "egg",
  "thiserror",
 ]
 

@@ -1,4 +1,6 @@
-use fluido_types::{concentration::Concentration, error::IRGenerationError, expr::Expr};
+use fluido_types::{
+    concentration::Concentration, error::IRGenerationError, expr::Expr, fluid::Fluid,
+};
 use pest::Parser;
 use pest_derive::Parser;
 
@@ -35,7 +37,15 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
         Rule::float => {
             let num = pair.as_str().parse::<f64>().unwrap();
             let concentration = Concentration::from(num);
-            Ok(Expr::Number(concentration))
+            Ok(Expr::Concentration(concentration))
+        }
+        Rule::integer => {
+            let num = pair.as_str().parse::<u64>().unwrap();
+            Ok(Expr::Vol(num))
+        }
+        Rule::fluid => {
+            let fluid = pair.as_str().parse::<Fluid>().unwrap();
+            Ok(Expr::Fluid(fluid))
         }
         _ => unreachable!(),
     }
@@ -43,39 +53,53 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
 
 #[cfg(test)]
 mod tests {
-    use fluido_types::{concentration::Concentration, expr::Expr};
-
     use crate::parser::Parse;
+    use fluido_types::{concentration::Concentration, expr::Expr, fluid::Fluid};
 
     #[test]
-    fn pase_single_num() {
-        let input_str = "0.2";
+    fn parse_fluid() {
+        let input_str = "(fluid 0.2 1)";
         let expr = Expr::parse(input_str).unwrap();
-        let expected_expr = Expr::Number(Concentration::from(0.2));
-        assert_eq!(expected_expr, expr)
+        let expected_conc = Concentration::from(0.2);
+        let expected_vol = 1;
+        let expected_fluid = Expr::Fluid(Fluid::new(expected_conc, expected_vol));
+        assert_eq!(expected_fluid, expr)
     }
 
     #[test]
-    fn pase_single_mix() {
-        let input_str = "(mix 0.2 0.3)";
+    fn parse_single_mix() {
+        let input_str = "(mix (fluid 0.2 1) (fluid 0.3 1))";
         let expr = Expr::parse(input_str).unwrap();
-        let zero_point_two = Expr::Number(Concentration::from(0.2));
-        let zero_point_three = Expr::Number(Concentration::from(0.3));
-        let expected_expr = Expr::Mix(Box::new(zero_point_two), Box::new(zero_point_three));
+        let unit_vol = 1u64;
+
+        let zero_point_two = Concentration::from(0.2);
+        let zero_point_three = Concentration::from(0.3);
+        let first_fluid = Expr::Fluid(Fluid::new(zero_point_two, unit_vol));
+        let second_fluid = Expr::Fluid(Fluid::new(zero_point_three, unit_vol));
+        let expected_expr = Expr::Mix(Box::new(first_fluid), Box::new(second_fluid));
         assert_eq!(expected_expr, expr)
     }
 
     #[test]
     fn parse_nested_mix() {
-        let input_str = "(mix 0.2 (mix 0.3 0.4))";
+        let input_str = "(mix (fluid 0.2 1) (mix (fluid 0.3 1) (fluid 0.4 1)))";
         let expr = Expr::parse(input_str).unwrap();
-        let zero_point_three = Expr::Number(Concentration::from(0.3));
-        let zero_point_four = Expr::Number(Concentration::from(0.4));
+        let unit_vol = 1u64;
+        let zero_point_two = Concentration::from(0.2);
+        let zero_point_three = Concentration::from(0.3);
+        let zero_point_four = Concentration::from(0.4);
 
-        let first_mix = Expr::Mix(Box::new(zero_point_three), Box::new(zero_point_four));
-        let zero_point_two = Expr::Number(Concentration::from(0.2));
-        let expected_expr = Expr::Mix(Box::new(zero_point_two), Box::new(first_mix));
+        let first_fluid = Fluid::new(zero_point_two, unit_vol);
+        let second_fluid = Fluid::new(zero_point_three, unit_vol);
+        let third_fluid = Fluid::new(zero_point_four, unit_vol);
 
-        assert_eq!(expected_expr, expr)
+        let first_fluid_expr = Expr::Fluid(first_fluid);
+        let second_fluid_expr = Expr::Fluid(second_fluid);
+        let third_fluid_expr = Expr::Fluid(third_fluid);
+
+        let inner_mix = Expr::Mix(Box::new(second_fluid_expr), Box::new(third_fluid_expr));
+        let final_mix = Expr::Mix(Box::new(first_fluid_expr), Box::new(inner_mix));
+
+        assert_eq!(final_mix, expr)
     }
 }

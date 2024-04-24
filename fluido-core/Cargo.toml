@@ -8,4 +8,4 @@ fluido-generation = { path = "../fluido-generation/" }
 fluido-ir = { path = "../fluido-ir" }
 fluido-parse = { path = "../fluido-parse" }
 fluido-types = { path = "../fluido-types" }
-thiserror = "1.0.57"
+thiserror = { workspace = true }

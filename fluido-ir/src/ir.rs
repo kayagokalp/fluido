@@ -1,4 +1,4 @@
-use fluido_types::concentration::Concentration;
+use fluido_types::fluid::Fluid;
 
 #[derive(Debug, Clone)]
 /// Possible IR operations for mixlang.
@@ -11,7 +11,7 @@ pub enum IROp {
 
 #[derive(Debug, Clone)]
 pub enum Operand {
-    Const(Concentration),
+    Const(Fluid),
     VirtualRegister(usize),
 }
 

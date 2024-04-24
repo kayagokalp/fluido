@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn single_mix_test() {
-        let mix_expr = "(mix 0.2 0.2)";
+        let mix_expr = "(mix (fluid 0.2 1) (fluid 0.2 1))";
         let ir = ir_from_str(mix_expr);
         let liveness_analysis = LivenessAnalysis {};
         let result = liveness_analysis.analyze(&ir);

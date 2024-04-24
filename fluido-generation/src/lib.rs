@@ -1,58 +1,145 @@
 use egg::{rewrite as rw, *};
-use fluido_types::{concentration::Concentration, error::MixerGenerationError};
-use std::{collections::HashSet, hash::Hash, time::Duration};
+use fluido_types::{concentration::Concentration, error::MixerGenerationError, fluid::Fluid};
+use std::{collections::HashSet, time::Duration};
 
 define_language! {
     pub enum MixLang {
+        Vol(u64),
+        Concentration(Concentration),
         "mix" = Mix([Id; 2]),
-        Num(Concentration),
-        "+" = Add([Id; 2]),
-        "-" = Sub([Id; 2]),
+        "fluid" = Fluid([Id; 2]),
+        "c+" = ConcentrationAdd([Id; 2]),
+        "c-" = ConcentrationSub([Id; 2]),
     }
 }
 #[derive(Default)]
 struct ArithmeticAnalysis;
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+enum ArithmeticAnalysisPayload {
+    Vol(u64),
+    Concentration(Concentration),
+    Fluid(Fluid),
+    None,
+}
+
+impl ArithmeticAnalysisPayload {
+    fn expect_vol(self) -> u64 {
+        match self {
+            ArithmeticAnalysisPayload::Vol(vol) => vol,
+            a => panic!("tried to get vol from payload, got {a:?}"),
+        }
+    }
+
+    fn expect_concentration(self) -> Concentration {
+        match self {
+            ArithmeticAnalysisPayload::Concentration(conc) => conc,
+            a => panic!("tried to get concentration from payload, got {a:?}"),
+        }
+    }
+
+    fn expect_fluid(self) -> Fluid {
+        match self {
+            ArithmeticAnalysisPayload::Fluid(fluid) => fluid,
+            a => panic!("tried to get fluid from payload, got {a:?}"),
+        }
+    }
+}
+
 impl Analysis<MixLang> for ArithmeticAnalysis {
-    type Data = Option<Concentration>;
+    type Data = ArithmeticAnalysisPayload;
 
     fn make(egraph: &EGraph<MixLang, Self>, enode: &MixLang) -> Self::Data {
         match enode {
-            MixLang::Mix(_) => None,
-            MixLang::Num(num) => Some(num.clone()),
-            MixLang::Add(add) => {
+            MixLang::Mix(_) => ArithmeticAnalysisPayload::None,
+            MixLang::Fluid(fluid) => {
+                let conc = fluid[0];
+                let vol = fluid[1];
+
+                let conc_node = &egraph[conc];
+                let vol_node = &egraph[vol];
+
+                let concentration = conc_node.data.clone().expect_concentration();
+                let vol = vol_node.data.clone().expect_vol();
+
+                let fluid = Fluid::new(concentration, vol);
+
+                ArithmeticAnalysisPayload::Fluid(fluid)
+            }
+            MixLang::ConcentrationAdd(add) => {
                 let node_a = add[0];
                 let node_b = add[1];
 
-                let node_a_num = egraph[node_a].data.as_ref();
-                let node_b_num = egraph[node_b].data.as_ref();
+                let node_a_fluid = egraph[node_a].data.clone().expect_fluid();
+                let node_b_fluid = egraph[node_b].data.clone().expect_fluid();
 
-                node_a_num
-                    .and_then(|node_a| node_b_num.map(|node_b| node_a.clone() + node_b.clone()))
+                let node_a_unit_vol = node_a_fluid.unit_volume();
+                let node_b_unit_vol = node_b_fluid.unit_volume();
+
+                // SAFETY: This is for sanity check, for `ConcentrationAdd` to be applied to any
+                // term during saturation, we require the volumes to be equal. So this should not
+                // fail. If it is failing, this is a critical bug.
+                assert_eq!(node_a_unit_vol, node_b_unit_vol);
+
+                let node_a_concentration = node_a_fluid.concentration();
+                let node_b_concentration = node_b_fluid.concentration();
+
+                let concentration = node_a_concentration.clone() + node_b_concentration.clone();
+                let new_fluid = Fluid::new(concentration, node_a_unit_vol);
+                ArithmeticAnalysisPayload::Fluid(new_fluid)
             }
-            MixLang::Sub(sub) => {
+            MixLang::ConcentrationSub(sub) => {
                 let node_a = sub[0];
                 let node_b = sub[1];
 
-                let node_a_num = egraph[node_a].data.as_ref();
-                let node_b_num = egraph[node_b].data.as_ref();
+                let node_a_fluid = egraph[node_a].data.clone().expect_fluid();
+                let node_b_fluid = egraph[node_b].data.clone().expect_fluid();
 
-                node_a_num
-                    .and_then(|node_a| node_b_num.map(|node_b| node_a.clone() - node_b.clone()))
+                let node_a_unit_vol = node_a_fluid.unit_volume();
+                let node_b_unit_vol = node_b_fluid.unit_volume();
+
+                // SAFETY: This is for sanity check, for `ConcentrationAdd` to be applied to any
+                // term during saturation, we require the volumes to be equal. So this should not
+                // fail. If it is failing, this is a critical bug.
+                assert_eq!(node_a_unit_vol, node_b_unit_vol);
+
+                let node_a_concentration = node_a_fluid.concentration();
+                let node_b_concentration = node_b_fluid.concentration();
+
+                let concentration = node_a_concentration.clone() - node_b_concentration.clone();
+                let new_fluid = Fluid::new(concentration, node_a_unit_vol);
+                ArithmeticAnalysisPayload::Fluid(new_fluid)
             }
+            MixLang::Vol(vol) => ArithmeticAnalysisPayload::Vol(*vol),
+            MixLang::Concentration(conc) => ArithmeticAnalysisPayload::Concentration(conc.clone()),
         }
     }
 
     fn merge(&mut self, to: &mut Self::Data, from: Self::Data) -> DidMerge {
-        merge_option(to, from, |a, b| {
+        let mut to = match to {
+            ArithmeticAnalysisPayload::None => None,
+            a => Some(a),
+        };
+        let mut binding = match from {
+            ArithmeticAnalysisPayload::None => None,
+            a => Some(a),
+        };
+        let from = binding.as_mut();
+
+        merge_option(&mut to, from, |a, b| {
             assert_eq!(*a, b, "Merged non-equal constants");
             DidMerge(false, false)
         })
     }
 
     fn modify(egraph: &mut EGraph<MixLang, Self>, id: Id) {
-        if let Some(data) = &egraph[id].data {
-            let added = egraph.add(MixLang::Num(data.clone()));
+        if let ArithmeticAnalysisPayload::Fluid(fl) = egraph[id].data.clone() {
+            let volume = fl.unit_volume();
+            let volume_node = egraph.add(MixLang::Vol(volume));
+
+            let concentration = fl.concentration();
+            let concentration_node = egraph.add(MixLang::Concentration(concentration.clone()));
+            let added = egraph.add(MixLang::Fluid([concentration_node, volume_node]));
             egraph.union(id, added);
         }
     }
@@ -60,12 +147,12 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
 
 fn generate_mix_rules() -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
     vec![
-        rw!("differentiate-mixer";
-            "(mix ?a ?b)" => "(mix (- ?a 0.001) (+ ?b 0.001))"),
-        rw!("differentiate-mixer2";
-            "(mix ?a ?b)" => "(mix (+ ?a 0.001) (- ?b 0.001))"),
-        rw!("expand-num";
-            "(?a)" => "(mix ?a ?a)"),
+        rw!("differentiate-mixer-conc1";
+            "(mix (fluid ?a ?c) (fluid ?b ?c))" => "(mix (c- (fluid ?a ?c) (fluid 0.001 ?c)) (c+ (fluid ?b ?c) (fluid 0.001 ?c)))"),
+        rw!("differentiate-mixer-conc2";
+            "(mix (fluid ?a ?c) (fluid ?b ?c))" => "(mix (c+ (fluid ?a ?c) (fluid 0.001 ?c)) (c- (fluid ?b ?c) (fluid 0.001 ?c)))"),
+        rw!("expand-fluid";
+            "(fluid ?a ?b)" => "(mix (fluid ?a ?b) (fluid ?a ?b))"),
     ]
 }
 
@@ -91,21 +178,23 @@ impl CostFunction<MixLang> for SillyCostFn {
     {
         let op_cost = match enode {
             MixLang::Mix(_) => 0.0,
-            MixLang::Num(num) => {
-                if *num == self.target {
+            MixLang::Fluid(_) => 0.0,
+            MixLang::Concentration(concentration) => {
+                if *concentration == self.target {
                     f64::MAX
-                } else if self.input_space.contains(num) {
+                } else if self.input_space.contains(concentration) {
                     0.0
                 } else {
                     let closest_val = self
                         .input_space
                         .iter()
-                        .map(|input| (input.clone() - num.clone()).wrapped.abs())
+                        .map(|input| (input.clone() - concentration.clone()).wrapped.abs())
                         .min();
 
                     closest_val.unwrap() as f64
                 }
             }
+            MixLang::Vol(_) => 0.0,
             _ => 100.0,
         };
 
@@ -119,7 +208,7 @@ pub fn saturate(
     time_limit: u64,
     input_space: &[Concentration],
 ) -> Result<Sequence, MixerGenerationError> {
-    let start = format!("({})", target_concentration)
+    let start = format!("(fluid {} 1)", target_concentration)
         .parse()
         .map_err(|_| MixerGenerationError::FailedToParseTarget(target_concentration.clone()))?;
     let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
