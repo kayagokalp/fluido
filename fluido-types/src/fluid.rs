@@ -1,9 +1,68 @@
+use std::{
+    fmt::Display,
+    num::{ParseFloatError, ParseIntError},
+    str::FromStr,
+};
+
 use crate::concentration::Concentration;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Fluid {
     concentration: Concentration,
     unit_volume: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FluidParseError {
+    InvalidFloatParse(ParseFloatError),
+    InvalidVolumeParse(ParseIntError),
+    MissingParanthesis,
+    MissingComma,
+}
+
+impl FromStr for Fluid {
+    type Err = FluidParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.starts_with('[') && s.ends_with(']') {
+            let mut s = s.to_string();
+            s.remove(0);
+            s.pop();
+            let mut splitted_s = s.split(',');
+            let concentration_str = splitted_s
+                .next()
+                .ok_or(FluidParseError::MissingComma)?
+                .trim();
+            let unit_volume_str = splitted_s
+                .next()
+                .ok_or(FluidParseError::MissingComma)?
+                .trim();
+
+            let concentration = Concentration::from_str(concentration_str)
+                .map_err(FluidParseError::InvalidFloatParse)?;
+            let unit_volume = unit_volume_str
+                .parse::<u64>()
+                .map_err(FluidParseError::InvalidVolumeParse)?;
+
+            let fluid = Self {
+                concentration,
+                unit_volume,
+            };
+            Ok(fluid)
+        } else {
+            Err(FluidParseError::MissingParanthesis)
+        }
+    }
+}
+
+impl Display for Fluid {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(")?;
+        write!(f, "{}", self.concentration)?;
+        write!(f, ",")?;
+        write!(f, "{}", self.unit_volume)?;
+        write!(f, ")")
+    }
 }
 
 impl Fluid {
@@ -35,10 +94,22 @@ impl Fluid {
 
         Self::new(resulting_conc, resulting_volume)
     }
+
+    /// Returns a reference to the underlying `Concentration` for this fluid.
+    pub fn concentration(&self) -> &Concentration {
+        &self.concentration
+    }
+
+    /// Returns a reference to the underlying unit_volume.
+    pub fn unit_volume(&self) -> u64 {
+        self.unit_volume
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use crate::concentration::Concentration;
 
     use super::Fluid;
@@ -78,5 +149,13 @@ mod tests {
         let expected_fluid = Fluid::new(expected_concentration, expected_volume);
 
         assert_eq!(expected_fluid, resulting_fluid);
+    }
+
+    #[test]
+    fn parse_fluid_str() {
+        let parsed_fluid = Fluid::from_str("[0.1,1]").unwrap();
+        let expected_fluid = Fluid::new(0.1.into(), 1);
+
+        assert_eq!(expected_fluid, parsed_fluid)
     }
 }

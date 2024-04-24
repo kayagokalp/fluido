@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.79"
+anyhow = { workspace = true } 
 clap = { version = "4.5.0", features = ["derive"] }
 fluido-core = { path = "../fluido-core/" }
 fluido-types = { path = "../fluido-types/" }
