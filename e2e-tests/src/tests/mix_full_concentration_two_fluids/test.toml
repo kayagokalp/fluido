@@ -1,0 +1,6 @@
+[metadata]
+name = "mix_full_concentration_two_fluids"
+
+[setup.input-fluids]
+fluid-a = { concentration = "0.0", volume = "1.0" }
+fluid-b = { concentration = "0.0", volume = "1.0" }

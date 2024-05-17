@@ -22,6 +22,12 @@ pub enum FluidParseError {
     MissingVolAndOrConcentration,
 }
 
+impl From<FluidParseError> for anyhow::Error {
+    fn from(value: FluidParseError) -> Self {
+        anyhow::anyhow!(value)
+    }
+}
+
 impl FromStr for Fluid {
     type Err = FluidParseError;
 

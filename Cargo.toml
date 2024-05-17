@@ -1,9 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["fluido-generation", "fluido", "fluido-parse", "fluido-ir", "fluido-core", "fluido-types"]
+members = ["fluido-generation", "fluido", "fluido-parse", "fluido-ir", "fluido-core", "fluido-types", "e2e-tests"]
 
 [workspace.dependencies]
 anyhow = "1.0.79"
+clap = "4.5.0"
 egg = "0.9.5"
 petgraph = "0.6.4"
 thiserror = "1.0.57"
+serde = "1.0.202"
