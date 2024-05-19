@@ -1,3 +1,4 @@
+#![allow(clippy::empty_docs)]
 use fluido_types::{
     concentration::Concentration, error::IRGenerationError, expr::Expr, fluid::Fluid,
 };
