@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{cli::RunConfig, manifest::TestManifestFile};
+use crate::{manifest::TestManifestFile};
 use regex::{Captures, Regex};
 
 /// Default name of the test manifest file.
@@ -47,12 +47,8 @@ where
 }
 
 /// Starting from the `e2e-tests/src/tests/` discovers all the tests we have and collects their manifest files to be processed later on.
-pub fn discover_test_configs(run_config: &RunConfig) -> anyhow::Result<Vec<TestManifestFile>> {
-    fn recursive_search(
-        path: &Path,
-        run_config: &RunConfig,
-        configs: &mut Vec<TestManifestFile>,
-    ) -> anyhow::Result<()> {
+pub fn discover_test_configs() -> anyhow::Result<Vec<TestManifestFile>> {
+    fn recursive_search(path: &Path, configs: &mut Vec<TestManifestFile>) -> anyhow::Result<()> {
         let wrap_err = |e| {
             let relative_path = path
                 .iter()
@@ -63,7 +59,7 @@ pub fn discover_test_configs(run_config: &RunConfig) -> anyhow::Result<Vec<TestM
         };
         if path.is_dir() {
             for entry in std::fs::read_dir(path).unwrap() {
-                recursive_search(&entry.unwrap().path(), run_config, configs)?;
+                recursive_search(&entry.unwrap().path(), configs)?;
             }
         } else if path.is_file()
             && path
@@ -71,7 +67,7 @@ pub fn discover_test_configs(run_config: &RunConfig) -> anyhow::Result<Vec<TestM
                 .map(|f| f == TEST_MANIFEST_FILE)
                 .unwrap_or(false)
         {
-            let test_toml = TestManifestFile::from_file(&path).map_err(wrap_err)?;
+            let test_toml = TestManifestFile::from_file(path).map_err(wrap_err)?;
             configs.push(test_toml);
         }
         Ok(())
@@ -81,7 +77,7 @@ pub fn discover_test_configs(run_config: &RunConfig) -> anyhow::Result<Vec<TestM
     let tests_root_dir = format!("{manifest_dir}/src/tests");
 
     let mut configs = Vec::new();
-    recursive_search(&PathBuf::from(tests_root_dir), run_config, &mut configs)?;
+    recursive_search(&PathBuf::from(tests_root_dir), &mut configs)?;
     Ok(configs)
 }
 

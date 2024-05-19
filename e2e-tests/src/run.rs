@@ -12,7 +12,7 @@ use colored::Colorize;
 use fluido_core::{Config, LogConfig, MixerGenerationConfig, MixerGenerator};
 
 pub async fn run(run_config: &RunConfig, filter_config: &FilterConfig) -> anyhow::Result<()> {
-    let mut discovered_tests = discover_test_configs(&run_config)?;
+    let mut discovered_tests = discover_test_configs()?;
     let total_test_count = discovered_tests.len();
     let included_tests = filter_config
         .include
