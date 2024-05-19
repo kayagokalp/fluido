@@ -26,6 +26,9 @@ pub struct TestManifest {
     pub setup: Setup,
     #[serde(default)]
     pub disabled: bool,
+    /// Time limit in seconds.
+    pub time_limit: u64,
+    pub expected: Expected,
 }
 
 /// Describes the metadata table of the manifest file.
@@ -41,7 +44,8 @@ pub struct Metadata {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Setup {
-    pub input_fluids: BTreeMap<String, TestFluid>,
+    pub input: BTreeMap<String, TestFluid>,
+    pub target: BTreeMap<String, TestFluid>,
 }
 
 /// Describes the test fluid values in the manifest file.
@@ -51,6 +55,14 @@ pub struct Setup {
 pub struct TestFluid {
     pub concentration: String,
     pub volume: String,
+}
+
+/// Describes the expected results of a test.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct Expected {
+    pub mixer_sequence: Option<String>,
+    pub storage_units: Option<u64>,
 }
 
 /// A specific instance of a `TestManifest` from disk.

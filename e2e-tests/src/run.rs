@@ -1,12 +1,17 @@
-use std::time::Instant;
+use std::{
+    io::{stdout, Write},
+    time::Instant,
+};
 
 use crate::{
     cli::{FilterConfig, RunConfig},
+    harness,
     util::{discover_test_configs, VecExt},
 };
 use colored::Colorize;
+use fluido_core::{Config, LogConfig, MixerGenerationConfig, MixerGenerator};
 
-pub fn run(run_config: &RunConfig, filter_config: &FilterConfig) -> anyhow::Result<()> {
+pub async fn run(run_config: &RunConfig, filter_config: &FilterConfig) -> anyhow::Result<()> {
     let mut discovered_tests = discover_test_configs(&run_config)?;
     let total_test_count = discovered_tests.len();
     let included_tests = filter_config
@@ -34,8 +39,27 @@ pub fn run(run_config: &RunConfig, filter_config: &FilterConfig) -> anyhow::Resu
         let test_manifest = &test_file.test_manifest;
 
         print!("Testing {}...", test_manifest.metadata.name);
+        stdout().flush().unwrap();
 
-        // TODO: actually execute the test and check the result.
+        let time_limit = test_manifest.time_limit;
+        // TODO: expose this to the test toml.
+        let mixer_generator = MixerGenerator::EqualitySaturation;
+        let mixer_config = MixerGenerationConfig::new(time_limit, mixer_generator);
+        // TODO: expose extra logging steps to the test toml.
+        let logging = LogConfig::silent();
+        let config = Config::new(mixer_config, logging);
+        // Runs the search_mixer_design routine with test setup
+        let (result, output) = harness::run_saturation(test_manifest, config).await?;
+        if !result {
+            number_of_tests_failed += 1;
+            println!("{}", "FAILED".red());
+        } else {
+            println!("{}", "ok".green());
+        }
+        if run_config.verbose {
+            println!("--- OUTPUT ---");
+            println!("{output}");
+        }
         number_of_tests_executed += 1;
     }
     let duration = instant.elapsed();

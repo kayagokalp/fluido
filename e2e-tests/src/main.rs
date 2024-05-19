@@ -8,7 +8,8 @@ use clap::Parser;
 use cli::{FilterConfig, RunConfig};
 use run::run;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let args = cli::Args::parse();
     let filter_config = FilterConfig {
         include: args.include,
@@ -19,7 +20,7 @@ fn main() -> anyhow::Result<()> {
         update_output_files: args.update_output_files,
     };
 
-    run(&run_config, &filter_config)?;
+    run(&run_config, &filter_config).await?;
 
     Ok(())
 }

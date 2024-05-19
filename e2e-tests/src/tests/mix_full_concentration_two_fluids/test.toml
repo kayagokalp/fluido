@@ -1,6 +1,14 @@
+time-limit = 2
+
 [metadata]
 name = "mix_full_concentration_two_fluids"
 
-[setup.input-fluids]
-fluid-a = { concentration = "0.0", volume = "1.0" }
-fluid-b = { concentration = "0.0", volume = "1.0" }
+[setup.input]
+fluid-a = { concentration = "0.04", volume = "1" }
+fluid-b = { concentration = "0.0", volume = "1" }
+
+[setup.target]
+fluid-res = { concentration = "0.01", volume = "1" }
+
+[expected]
+mixer-sequence = "(mix (fluid 0 1) (mix (fluid 0 1) (fluid 0.04 1)))"

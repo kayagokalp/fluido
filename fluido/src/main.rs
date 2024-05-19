@@ -3,7 +3,7 @@ mod cmd;
 use clap::Parser;
 use cmd::Args;
 use fluido_core::{Config, LogConfig, MixerGenerationConfig, MixerGenerator};
-use fluido_types::concentration::Concentration;
+use fluido_types::{concentration::Concentration, fluid::Fluid};
 
 fn main() -> anyhow::Result<()> {
     let args = Args::try_parse()?;
@@ -20,7 +20,11 @@ fn handle_args(args: Args) -> anyhow::Result<()> {
     let input_space = args
         .input_space
         .iter()
-        .map(|input_concentration| Concentration::from(*input_concentration))
+        .map(|input_concentration| {
+            let conc = Concentration::from(*input_concentration);
+            //TODO: Actually parse fluid vol from user.
+            Fluid::new(conc, 1)
+        })
         .collect::<Vec<_>>();
     let config = Config::from(args);
 
@@ -42,7 +46,7 @@ impl From<Args> for Config {
         let time_limit = value.time_limit;
 
         let mixer_generation_config =
-            MixerGenerationConfig::new(time_limit, MixerGenerator::EquailtySaturation);
+            MixerGenerationConfig::new(time_limit, MixerGenerator::EqualitySaturation);
         let logging_config = LogConfig::new(
             value.show_dot,
             value.show_ir,
