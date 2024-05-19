@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{manifest::TestManifestFile};
+use crate::manifest::TestManifestFile;
 use regex::{Captures, Regex};
 
 /// Default name of the test manifest file.
