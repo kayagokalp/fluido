@@ -14,6 +14,7 @@ use fluido_types::{
         FluidoError, IRGenerationError, InterefenceGraphGenerationError, MixerGenerationError,
     },
     expr::Expr,
+    fluid::Fluid,
 };
 
 /// A mixer generator for a specific target concentration from a given input space.
@@ -78,6 +79,14 @@ impl LogConfig {
             show_interference_graph,
         }
     }
+    pub fn silent() -> Self {
+        Self {
+            show_mixer_graph: false,
+            show_ir: false,
+            show_liveness: false,
+            show_interference_graph: false,
+        }
+    }
 }
 
 /// Different types of mixer generation handlers.
@@ -86,7 +95,7 @@ impl LogConfig {
 /// add support for heuristics to generate initial mixer.
 #[derive(Debug, Clone)]
 pub enum MixerGenerator {
-    EquailtySaturation,
+    EqualitySaturation,
 }
 
 #[derive(Debug, Clone)]
@@ -107,12 +116,12 @@ impl MixerGenerationConfig {
 /// Generate a mixer for the target_concentration from input space.
 fn generate_mixer_sequence(
     target_concentration: Concentration,
-    input_space: &[Concentration],
+    input_space: &[Fluid],
     time_limit: u64,
     mixer_generator: MixerGenerator,
 ) -> Result<Sequence, MixerGenerationError> {
     match mixer_generator {
-        MixerGenerator::EquailtySaturation => {
+        MixerGenerator::EqualitySaturation => {
             let generated_mixer_sequence =
                 fluido_generation::saturate(target_concentration, time_limit, input_space)?;
             Ok(generated_mixer_sequence)
@@ -161,7 +170,7 @@ fn generate_interference_graph(
 pub fn search_mixer_design(
     config: Config,
     target_concentration: Concentration,
-    input_space: &[Concentration],
+    input_space: &[Fluid],
 ) -> Result<MixerDesign, FluidoError> {
     let mixer_generator = config.generation.generator;
     let time_limit = config.generation.time_limit;

@@ -1,0 +1,17 @@
+[package]
+name = "e2e-tests"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true, features = ["derive", "env"] }
+colored = "2.1.0"
+fluido-core = { path = "../fluido-core" }
+fluido-types = { path = "../fluido-types" }
+gag = "1.0.0"
+regex = "1.10.4"
+serde = { workspace = true, features = ["derive"] }
+serde_ignored = "0.1.10"
+tokio = { version = "1.12", features = ["full"] }
+toml = "0.8.13"

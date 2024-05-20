@@ -222,7 +222,7 @@ impl CostFunction<MixLang> for SillyCostFn {
 pub fn saturate(
     target_concentration: Concentration,
     time_limit: u64,
-    input_space: &[Concentration],
+    input_space: &[Fluid],
 ) -> Result<Sequence, MixerGenerationError> {
     let start = format!("(fluid {} 1)", target_concentration)
         .parse()
@@ -236,7 +236,11 @@ pub fn saturate(
 
     runner.print_report();
 
-    let input_space = input_space.iter().cloned().collect::<HashSet<_>>();
+    let input_space = input_space
+        .iter()
+        .map(|fluid| fluid.concentration())
+        .cloned()
+        .collect::<HashSet<_>>();
 
     let extractor = Extractor::new(
         &runner.egraph,

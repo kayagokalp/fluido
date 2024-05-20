@@ -1,15 +1,18 @@
+use serde::{Deserialize, Serialize};
 use std::{
     num::ParseFloatError,
     ops::{Add, Sub},
     str::FromStr,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Concentration {
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct LimitedFloat {
     pub wrapped: i64,
 }
 
-impl Concentration {
+pub type Concentration = LimitedFloat;
+
+impl LimitedFloat {
     pub fn new(wrapped: i64) -> Self {
         Self { wrapped }
     }
