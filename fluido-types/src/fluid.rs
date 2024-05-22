@@ -4,18 +4,18 @@ use std::{
     str::FromStr,
 };
 
-use crate::concentration::Concentration;
+use crate::concentration::{Concentration, Volume};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Fluid {
     concentration: Concentration,
-    unit_volume: u64,
+    unit_volume: Volume,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FluidParseError {
     InvalidFloatParse(ParseFloatError),
-    InvalidVolumeParse(ParseIntError),
+    InvalidVolumeParse(ParseFloatError),
     MissingParanthesis,
     MissingFluidKeyword,
     MissingSpace,
@@ -56,9 +56,8 @@ impl FromStr for Fluid {
 
             let concentration = Concentration::from_str(concentration_str)
                 .map_err(FluidParseError::InvalidFloatParse)?;
-            let unit_volume = unit_volume_str
-                .parse::<u64>()
-                .map_err(FluidParseError::InvalidVolumeParse)?;
+            let unit_volume =
+                Volume::from_str(unit_volume_str).map_err(FluidParseError::InvalidVolumeParse)?;
 
             let fluid = Self {
                 concentration,
@@ -85,7 +84,7 @@ impl Fluid {
     /// Creates a new fluid.
     ///
     /// Note: Assumes the volume is non-zero.
-    pub fn new(concentration: Concentration, unit_volume: u64) -> Self {
+    pub fn new(concentration: Concentration, unit_volume: Volume) -> Self {
         Self {
             concentration,
             unit_volume,
@@ -100,15 +99,17 @@ impl Fluid {
         let self_conc: f64 = self.concentration.clone().into();
         let other_conc: f64 = other.concentration.clone().into();
 
-        let resulting_volume = other.unit_volume + self.unit_volume;
+        let self_vol: f64 = self.unit_volume().clone().into();
+        let other_vol: f64 = other.unit_volume().clone().into();
 
-        let resulting_conc = ((self_conc * self.unit_volume as f64)
-            + (other_conc * other.unit_volume as f64))
-            / resulting_volume as f64;
+        let resulting_vol = self_vol + other_vol;
+
+        let resulting_conc = ((self_conc * self_vol) + (other_conc * other_vol)) / resulting_vol;
 
         let resulting_conc = Concentration::from(resulting_conc);
+        let resulting_vol = Volume::from(resulting_vol);
 
-        Self::new(resulting_conc, resulting_volume)
+        Self::new(resulting_conc, resulting_vol)
     }
 
     /// Returns a reference to the underlying `Concentration` for this fluid.
@@ -117,8 +118,8 @@ impl Fluid {
     }
 
     /// Returns a reference to the underlying unit_volume.
-    pub fn unit_volume(&self) -> u64 {
-        self.unit_volume
+    pub fn unit_volume(&self) -> &Volume {
+        &self.unit_volume
     }
 }
 
@@ -126,24 +127,24 @@ impl Fluid {
 mod tests {
     use std::str::FromStr;
 
-    use crate::concentration::Concentration;
+    use crate::concentration::{Concentration, Volume};
 
     use super::Fluid;
 
     #[test]
     fn mix_two_equal_volume_fluids() {
         let concentration_a = Concentration::from(0.1);
-        let voluma_a = 1u64;
+        let voluma_a = Volume::from(1.0);
         let fluid_a = Fluid::new(concentration_a, voluma_a);
 
         let concentration_b = Concentration::from(0.2);
-        let voluma_b = 1u64;
+        let voluma_b = Volume::from(1.0);
         let fluid_b = Fluid::new(concentration_b, voluma_b);
 
         let resulting_fluid = fluid_a.mix(&fluid_b);
 
         let expected_concentration = Concentration::from(0.15);
-        let expected_volume = 2u64;
+        let expected_volume = Volume::from(2.0);
         let expected_fluid = Fluid::new(expected_concentration, expected_volume);
 
         assert_eq!(expected_fluid, resulting_fluid);
@@ -152,16 +153,16 @@ mod tests {
     #[test]
     fn mix_two_diff_volumed_fluids() {
         let concentration_a = Concentration::from(0.1);
-        let voluma_a = 1u64;
+        let voluma_a = Volume::from(1.0);
         let fluid_a = Fluid::new(concentration_a, voluma_a);
 
         let concentration_b = Concentration::from(0.2);
-        let voluma_b = 2u64;
+        let voluma_b = Volume::from(2.0);
         let fluid_b = Fluid::new(concentration_b, voluma_b);
 
         let resulting_fluid = fluid_a.mix(&fluid_b);
         let expected_concentration = Concentration::from(0.1667);
-        let expected_volume = 3u64;
+        let expected_volume = Volume::from(3.0);
         let expected_fluid = Fluid::new(expected_concentration, expected_volume);
 
         assert_eq!(expected_fluid, resulting_fluid);
@@ -169,8 +170,8 @@ mod tests {
 
     #[test]
     fn parse_fluid_str() {
-        let parsed_fluid = Fluid::from_str("(fluid 0.1 1)").unwrap();
-        let expected_fluid = Fluid::new(0.1.into(), 1);
+        let parsed_fluid = Fluid::from_str("(fluid 0.1 1.0)").unwrap();
+        let expected_fluid = Fluid::new(0.1.into(), 1.0.into());
 
         assert_eq!(expected_fluid, parsed_fluid)
     }

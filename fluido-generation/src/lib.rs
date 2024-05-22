@@ -1,15 +1,19 @@
 use egg::{rewrite as rw, *};
-use fluido_types::{concentration::Concentration, error::MixerGenerationError, fluid::Fluid};
+use fluido_types::{
+    concentration::{Concentration, LimitedFloat},
+    error::MixerGenerationError,
+    fluid::Fluid,
+};
 use std::{collections::HashSet, time::Duration};
 
 define_language! {
     pub enum MixLang {
-        Vol(u64),
-        Concentration(Concentration),
+        LimitedFloat(LimitedFloat),
+        "+" = Add([Id; 2]),
+        "-" = Sub([Id; 2]),
+        "/" = Div([Id; 2]),
         "mix" = Mix([Id; 2]),
         "fluid" = Fluid([Id; 2]),
-        "c+" = ConcentrationAdd([Id; 2]),
-        "c-" = ConcentrationSub([Id; 2]),
     }
 }
 #[derive(Default)]
@@ -17,31 +21,26 @@ struct ArithmeticAnalysis;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum ArithmeticAnalysisPayload {
-    Vol(u64),
-    Concentration(Concentration),
+    LimitedFloat(LimitedFloat),
     Fluid(Fluid),
     None,
 }
 
 impl ArithmeticAnalysisPayload {
-    fn expect_vol(self) -> u64 {
+    pub fn expect_limited_float(self) -> Option<LimitedFloat> {
         match self {
-            ArithmeticAnalysisPayload::Vol(vol) => vol,
-            a => panic!("tried to get vol from payload, got {a:?}"),
+            ArithmeticAnalysisPayload::LimitedFloat(lf) => Some(lf),
+            _ => None,
         }
     }
+}
 
-    fn expect_concentration(self) -> Concentration {
+impl MixLang {
+    // TODO: rename this.
+    pub fn expect_limited_float(self) -> Option<LimitedFloat> {
         match self {
-            ArithmeticAnalysisPayload::Concentration(conc) => conc,
-            a => panic!("tried to get concentration from payload, got {a:?}"),
-        }
-    }
-
-    fn expect_fluid(self) -> Fluid {
-        match self {
-            ArithmeticAnalysisPayload::Fluid(fluid) => fluid,
-            a => panic!("tried to get fluid from payload, got {a:?}"),
+            MixLang::LimitedFloat(lf) => Some(lf),
+            _ => None,
         }
     }
 }
@@ -51,67 +50,109 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
 
     fn make(egraph: &EGraph<MixLang, Self>, enode: &MixLang) -> Self::Data {
         match enode {
-            MixLang::Mix(_) => ArithmeticAnalysisPayload::None,
-            MixLang::Fluid(fluid) => {
-                let conc = fluid[0];
-                let vol = fluid[1];
+            MixLang::Mix(mix) => {
+                let fluid_a = &egraph[mix[0]];
+                let fluid_b = &egraph[mix[1]];
 
-                let conc_node = &egraph[conc];
-                let vol_node = &egraph[vol];
+                let fluid_a_conc_id = &fluid_a.nodes[0].children()[0];
+                let fluid_a_vol_id = &fluid_a.nodes[0].children()[1];
+                let fluid_a_conc = &egraph[*fluid_a_conc_id].nodes[0]
+                    .clone()
+                    .expect_limited_float();
+                let fluid_a_vol = &egraph[*fluid_a_vol_id].nodes[0]
+                    .clone()
+                    .expect_limited_float();
 
-                let concentration = conc_node.data.clone().expect_concentration();
-                let vol = vol_node.data.clone().expect_vol();
+                let fluid_b_conc_id = &fluid_b.nodes[0].children()[0];
+                let fluid_b_vol_id = &fluid_b.nodes[0].children()[1];
+                let fluid_b_conc = &egraph[*fluid_b_conc_id].nodes[0]
+                    .clone()
+                    .expect_limited_float();
+                let fluid_b_vol = &egraph[*fluid_b_vol_id].nodes[0]
+                    .clone()
+                    .expect_limited_float();
 
-                let fluid = Fluid::new(concentration, vol);
+                if let (
+                    Some(fluid_a_conc),
+                    Some(fluid_a_vol),
+                    Some(fluid_b_conc),
+                    Some(fluid_b_vol),
+                ) = (fluid_a_conc, fluid_a_vol, fluid_b_conc, fluid_b_vol)
+                {
+                    let fluid_a = Fluid::new(fluid_a_conc.clone(), fluid_a_vol.clone());
+                    let fluid_b = Fluid::new(fluid_b_conc.clone(), fluid_b_vol.clone());
 
-                ArithmeticAnalysisPayload::Fluid(fluid)
+                    let mixed_fluid = fluid_a.mix(&fluid_b);
+                    ArithmeticAnalysisPayload::Fluid(mixed_fluid)
+                } else {
+                    ArithmeticAnalysisPayload::None
+                }
             }
-            MixLang::ConcentrationAdd(add) => {
-                let node_a = add[0];
-                let node_b = add[1];
+            MixLang::Fluid(fl) => {
+                let node_a_id = fl[0];
+                let node_b_id = fl[1];
 
-                let node_a_fluid = egraph[node_a].data.clone().expect_fluid();
-                let node_b_fluid = egraph[node_b].data.clone().expect_fluid();
+                let node_a = &egraph[node_a_id].data.clone().expect_limited_float();
+                let node_b = &egraph[node_b_id].data.clone().expect_limited_float();
 
-                let node_a_unit_vol = node_a_fluid.unit_volume();
-                let node_b_unit_vol = node_b_fluid.unit_volume();
-
-                // SAFETY: This is for sanity check, for `ConcentrationAdd` to be applied to any
-                // term during saturation, we require the volumes to be equal. So this should not
-                // fail. If it is failing, this is a critical bug.
-                assert_eq!(node_a_unit_vol, node_b_unit_vol);
-
-                let node_a_concentration = node_a_fluid.concentration();
-                let node_b_concentration = node_b_fluid.concentration();
-
-                let concentration = node_a_concentration.clone() + node_b_concentration.clone();
-                let new_fluid = Fluid::new(concentration, node_a_unit_vol);
-                ArithmeticAnalysisPayload::Fluid(new_fluid)
+                if let (Some(conc), Some(vol)) = (node_a, node_b) {
+                    let fl = Fluid::new(conc.clone(), vol.clone());
+                    ArithmeticAnalysisPayload::Fluid(fl)
+                } else {
+                    ArithmeticAnalysisPayload::None
+                }
             }
-            MixLang::ConcentrationSub(sub) => {
-                let node_a = sub[0];
-                let node_b = sub[1];
+            MixLang::LimitedFloat(fl) => ArithmeticAnalysisPayload::LimitedFloat(fl.clone()),
+            MixLang::Add(add) => {
+                let node_a_id = add[0];
+                let node_b_id = add[1];
 
-                let node_a_fluid = egraph[node_a].data.clone().expect_fluid();
-                let node_b_fluid = egraph[node_b].data.clone().expect_fluid();
+                let node_a = &egraph[node_a_id].data;
+                let node_b = &egraph[node_b_id].data;
 
-                let node_a_unit_vol = node_a_fluid.unit_volume();
-                let node_b_unit_vol = node_b_fluid.unit_volume();
-
-                // SAFETY: This is for sanity check, for `ConcentrationAdd` to be applied to any
-                // term during saturation, we require the volumes to be equal. So this should not
-                // fail. If it is failing, this is a critical bug.
-                assert_eq!(node_a_unit_vol, node_b_unit_vol);
-
-                let node_a_concentration = node_a_fluid.concentration();
-                let node_b_concentration = node_b_fluid.concentration();
-
-                let concentration = node_a_concentration.clone() - node_b_concentration.clone();
-                let new_fluid = Fluid::new(concentration, node_a_unit_vol);
-                ArithmeticAnalysisPayload::Fluid(new_fluid)
+                if let (Some(vol_a), Some(vol_b)) = (
+                    node_a.clone().expect_limited_float(),
+                    node_b.clone().expect_limited_float(),
+                ) {
+                    let result = vol_a + vol_b;
+                    ArithmeticAnalysisPayload::LimitedFloat(result)
+                } else {
+                    ArithmeticAnalysisPayload::None
+                }
             }
-            MixLang::Vol(vol) => ArithmeticAnalysisPayload::Vol(*vol),
-            MixLang::Concentration(conc) => ArithmeticAnalysisPayload::Concentration(conc.clone()),
+            MixLang::Sub(sub) => {
+                let node_a_id = sub[0];
+                let node_b_id = sub[1];
+
+                let node_a = &egraph[node_a_id].data;
+                let node_b = &egraph[node_b_id].data;
+
+                if let (Some(vol_a), Some(vol_b)) = (
+                    node_a.clone().expect_limited_float(),
+                    node_b.clone().expect_limited_float(),
+                ) {
+                    let result = vol_a - vol_b;
+                    ArithmeticAnalysisPayload::LimitedFloat(result)
+                } else {
+                    ArithmeticAnalysisPayload::None
+                }
+            }
+            MixLang::Div(div) => {
+                let node_a_id = div[0];
+                let node_b_id = div[1];
+
+                let node_a = egraph[node_a_id].clone().data;
+                let node_b = egraph[node_b_id].clone().data;
+                if let (Some(vol_a), Some(vol_b)) = (
+                    node_a.clone().expect_limited_float(),
+                    node_b.clone().expect_limited_float(),
+                ) {
+                    let result = vol_a / vol_b;
+                    ArithmeticAnalysisPayload::LimitedFloat(result)
+                } else {
+                    ArithmeticAnalysisPayload::None
+                }
+            }
         }
     }
 
@@ -134,58 +175,39 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
 
     fn modify(egraph: &mut EGraph<MixLang, Self>, id: Id) {
         if let ArithmeticAnalysisPayload::Fluid(fl) = egraph[id].data.clone() {
-            let volume = fl.unit_volume();
-            let volume_node = egraph.add(MixLang::Vol(volume));
-
+            if fl.unit_volume().valid() && fl.unit_volume().wrapped != 0 {
+                println!("adding (fluid {} {})", fl.concentration(), fl.unit_volume());
+            }
             let concentration = fl.concentration();
-            let concentration_node = egraph.add(MixLang::Concentration(concentration.clone()));
+            let concentration_node = egraph.add(MixLang::LimitedFloat(concentration.clone()));
+            let volume = fl.unit_volume();
+            let volume_node = egraph.add(MixLang::LimitedFloat(volume.clone()));
             let added = egraph.add(MixLang::Fluid([concentration_node, volume_node]));
             egraph.union(id, added);
         }
     }
 }
 
-fn generate_mix_rules() -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
-    vec![
-        rw!("differentiate-mixer-conc1";
-            "(mix (fluid ?a ?c) (fluid ?b ?c))" => "(mix (c- (fluid ?a ?c) (fluid 0.001 ?c)) (c+ (fluid ?b ?c) (fluid 0.001 ?c)))"
-             if concentration_valid("?a")),
-        rw!("differentiate-mixer-conc2";
-            "(mix (fluid ?a ?c) (fluid ?b ?c))" => "(mix (c+ (fluid ?a ?c) (fluid 0.001 ?c)) (c- (fluid ?b ?c) (fluid 0.001 ?c)))"
-            if concentration_valid("?a")),
-        rw!("expand-fluid";
-            "(fluid ?a ?b)" => "(mix (fluid ?a ?b) (fluid ?a ?b))"),
-    ]
-}
-
-fn concentration_valid(
-    concentration: &'static str,
-) -> impl Fn(&mut EGraph<MixLang, ArithmeticAnalysis>, Id, &Subst) -> bool {
-    let var_concentration: Var = concentration.parse().unwrap();
-    move |egraph, _, subst| {
-        let conc = subst[var_concentration];
-        let conc_node = &egraph[conc];
-
-        let concentration = conc_node.data.clone().expect_concentration();
-
-        concentration.valid()
-    }
-}
-
-struct SillyCostFn {
+struct SillyCostFn<'a> {
     input_space: HashSet<Concentration>,
     target: Concentration,
+    egraph: &'a EGraph<MixLang, ArithmeticAnalysis>,
 }
 
-impl SillyCostFn {
-    fn new(input_space: HashSet<Concentration>, target: Concentration) -> Self {
+impl<'a> SillyCostFn<'a> {
+    fn new(
+        input_space: HashSet<Concentration>,
+        target: Concentration,
+        egraph: &'a EGraph<MixLang, ArithmeticAnalysis>,
+    ) -> Self {
         Self {
             input_space,
             target,
+            egraph,
         }
     }
 }
-impl CostFunction<MixLang> for SillyCostFn {
+impl CostFunction<MixLang> for SillyCostFn<'_> {
     type Cost = f64;
 
     fn cost<C>(&mut self, enode: &MixLang, mut costs: C) -> Self::Cost
@@ -194,28 +216,67 @@ impl CostFunction<MixLang> for SillyCostFn {
     {
         let op_cost = match enode {
             MixLang::Mix(_) => 0.0,
-            MixLang::Fluid(_) => 0.0,
-            MixLang::Concentration(concentration) => {
-                if *concentration == self.target {
-                    f64::MAX
-                } else if self.input_space.contains(concentration) {
-                    0.0
-                } else {
-                    let closest_val = self
-                        .input_space
-                        .iter()
-                        .map(|input| (input.clone() - concentration.clone()).wrapped.abs())
-                        .min();
+            MixLang::Fluid(fl) => {
+                let fl_node_a_id = fl[0];
+                let fl_node_b_id = fl[1];
 
-                    closest_val.unwrap() as f64
+                let fl_node_a = &self.egraph[fl_node_a_id].data;
+                let fl_node_b = &self.egraph[fl_node_b_id].data;
+
+                let fl_conc = fl_node_a.clone().expect_limited_float();
+                let fl_vol = fl_node_b.clone().expect_limited_float();
+
+                if let (Some(conc), Some(vol)) = (fl_conc, fl_vol) {
+                    if conc == self.target {
+                        10000.0
+                    } else if self.input_space.contains(&conc) {
+                        0.0
+                    } else {
+                        let closest_val = self
+                            .input_space
+                            .iter()
+                            .map(|input| (input.clone() - conc.clone()).wrapped.abs())
+                            .min();
+
+                        let final_val = closest_val.unwrap() as f64 * LimitedFloat::EPSILON;
+                        final_val
+                    }
+                } else {
+                    f64::MAX
                 }
             }
-            MixLang::Vol(_) => 0.0,
             _ => 100.0,
         };
 
         enode.fold(op_cost, |sum, id| sum + costs(id))
     }
+}
+
+fn generate_rewrite_rules() -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
+    vec![
+        rw!("expand-fluid-to-mix";
+            "(fluid ?a ?b)" => "(mix (fluid ?a (/ ?b 2)) (fluid ?a (/ ?b 2)))"),
+        rw!("diff-mixers-l";
+            "(mix (fluid ?a ?b) (fluid ?c ?b))" => "(mix (fluid (+ ?a 0.01) ?b) (fluid (- ?c 0.01) ?b))"),
+        rw!("diff-mixers-r";
+            "(mix (fluid ?a ?b) (fluid ?c ?b))" => "(mix (fluid (- ?a 0.01) ?b) (fluid (+ ?c 0.01) ?b))"),
+    ]
+}
+
+/// Generate all possible fluids with given start and end with step sizes.
+pub fn generate_all_fluids() -> Vec<Fluid> {
+    let epsilon = Concentration::EPSILON;
+    let end = (1.0 / epsilon) as usize;
+
+    let mut result = Vec::with_capacity(end as usize);
+    for i in 0..end {
+        let concentrationtion = Concentration::new(i as i64);
+        let volume = 1.0.into();
+        let fluid = Fluid::new(concentrationtion, volume);
+        result.push(fluid);
+    }
+
+    result
 }
 
 /// Saturate to find out an optimized sequence according to the cost function.
@@ -224,15 +285,26 @@ pub fn saturate(
     time_limit: u64,
     input_space: &[Fluid],
 ) -> Result<Sequence, MixerGenerationError> {
-    let start = format!("(fluid {} 1)", target_concentration)
-        .parse()
+    let mut initial_egraph = EGraph::new(ArithmeticAnalysis);
+    let start_node = format!("(fluid {} 1)", target_concentration)
+        .parse::<RecExpr<MixLang>>()
         .map_err(|_| MixerGenerationError::FailedToParseTarget(target_concentration.clone()))?;
+    let target = initial_egraph.add_expr(&start_node);
+    println!("{start_node:?}, target {target_concentration:?}");
+    for fluid in generate_all_fluids().iter().filter_map(|fl| {
+        format!("(fluid {} {})", fl.concentration(), fl.unit_volume())
+            .parse::<RecExpr<MixLang>>()
+            .ok()
+    }) {
+        initial_egraph.add_expr(&fluid);
+    }
+
     let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
-        .with_expr(&start)
+        .with_egraph(initial_egraph)
         .with_node_limit(10000000000000000)
         .with_iter_limit(100000)
         .with_time_limit(Duration::from_secs(time_limit))
-        .run(&generate_mix_rules());
+        .run(&generate_rewrite_rules());
 
     runner.print_report();
 
@@ -244,10 +316,12 @@ pub fn saturate(
 
     let extractor = Extractor::new(
         &runner.egraph,
-        SillyCostFn::new(input_space, target_concentration),
+        SillyCostFn::new(input_space, target_concentration, &runner.egraph),
     );
 
-    let (cost, best_expr) = extractor.find_best(runner.roots[0]);
+    println!("{:?}", &runner.egraph[target].data);
+    let (cost, best_expr) = extractor.find_best(target);
+    println!("{best_expr} cost: {cost}");
     let sequence = Sequence { cost, best_expr };
     Ok(sequence)
 }
