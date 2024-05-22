@@ -22,10 +22,10 @@ impl LimitedFloat {
         self.wrapped >= 0 && self.wrapped as f64 <= 1.0f64 / Self::EPSILON
     }
 
-    pub const EPSILON: f64 = 0.0001;
+    pub const EPSILON: f64 = 0.001;
 }
 
-impl Sub for Concentration {
+impl Sub for LimitedFloat {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -37,7 +37,7 @@ impl Sub for Concentration {
     }
 }
 
-impl Add for Concentration {
+impl Add for LimitedFloat {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -53,15 +53,15 @@ impl Div for LimitedFloat {
     type Output = LimitedFloat;
 
     fn div(self, rhs: Self) -> Self::Output {
-        let self_val = self.wrapped;
-        let rhs_val = rhs.wrapped;
-        let val = self_val / rhs_val;
+        let self_val: f64 = self.into();
+        let rhs_val: f64 = rhs.into();
 
-        Self { wrapped: val }
+        let res = self_val / rhs_val;
+        LimitedFloat::from(res)
     }
 }
 
-impl From<Concentration> for f64 {
+impl From<LimitedFloat> for f64 {
     fn from(value: Concentration) -> Self {
         let epsilon_corrected = value.wrapped as f64 * Concentration::EPSILON;
         let scale = 1f64 / Self::EPSILON;
@@ -69,7 +69,7 @@ impl From<Concentration> for f64 {
     }
 }
 
-impl From<f64> for Concentration {
+impl From<f64> for LimitedFloat {
     fn from(value: f64) -> Self {
         Self {
             wrapped: (value / Self::EPSILON).round() as i64,
@@ -77,7 +77,7 @@ impl From<f64> for Concentration {
     }
 }
 
-impl FromStr for Concentration {
+impl FromStr for LimitedFloat {
     type Err = ParseFloatError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -90,15 +90,15 @@ impl FromStr for Concentration {
     }
 }
 
-impl std::fmt::Display for Concentration {
+impl std::fmt::Display for LimitedFloat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.wrapped == 0 {
-            write!(f, "0.0")
-        } else {
-            let epsilon_corrected = self.wrapped as f64 * Self::EPSILON;
-            let scale = 1f64 / Self::EPSILON;
-            let truncated = (epsilon_corrected * scale).trunc() / scale;
+        let epsilon_corrected = self.wrapped as f64 * Self::EPSILON;
+        let scale = 1f64 / Self::EPSILON;
+        let truncated = (epsilon_corrected * scale).trunc() / scale;
 
+        if truncated.fract() == 0.0 {
+            write!(f, "{}.0", truncated)
+        } else {
             write!(f, "{}", truncated)
         }
     }
