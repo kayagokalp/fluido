@@ -287,7 +287,7 @@ fn fluid_valid(
         let col = col_node.data.clone().expect_limited_float().unwrap();
         input_space.contains(&col);
 
-        res > 0.0 && res <= 1.0 && !input_space.contains(&col)
+        res > 0.0 && !input_space.contains(&col)
     }
 }
 
@@ -347,6 +347,15 @@ pub fn generate_all_fluids() -> Vec<Fluid> {
     result
 }
 
+pub fn generate_all_mix_to_targets() -> Vec<MixLang> {
+    let epsilon = Concentration::EPSILON;
+    let end = (1.0 / epsilon) as usize;
+
+    let mut result = Vec::with_capacity(end as usize);
+    for i in 0..end {}
+    result
+}
+
 /// Saturate to find out an optimized sequence according to the cost function.
 pub fn saturate(
     target_concentration: Concentration,
@@ -354,7 +363,7 @@ pub fn saturate(
     input_space: &[Fluid],
 ) -> Result<Sequence, MixerGenerationError> {
     let mut initial_egraph = EGraph::new(ArithmeticAnalysis);
-    let target_node = format!("(fluid {} 1.0)", target_concentration)
+    let target_node = format!("(fluid {} 100.0)", target_concentration)
         .parse::<RecExpr<MixLang>>()
         .map_err(|_| MixerGenerationError::FailedToParseTarget(target_concentration.clone()))?;
 
