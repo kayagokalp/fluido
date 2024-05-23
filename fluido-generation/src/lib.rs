@@ -344,11 +344,12 @@ pub fn saturate(
     input_space: &[Fluid],
 ) -> Result<Sequence, MixerGenerationError> {
     let mut initial_egraph = EGraph::new(ArithmeticAnalysis);
-    let start_node = format!("(fluid {} 1.0)", target_concentration)
+    let target_node = format!("(fluid {} 1.0)", target_concentration)
         .parse::<RecExpr<MixLang>>()
         .map_err(|_| MixerGenerationError::FailedToParseTarget(target_concentration.clone()))?;
-    let target = initial_egraph.add_expr(&start_node);
-    println!("{start_node:?}, target {target_concentration:?}");
+
+    let target = initial_egraph.add_expr(&target_node);
+    println!("{target_node:?}, target {target_concentration:?}");
 
     /*
         for fluid in generate_all_fluids().iter().filter_map(|fl| {

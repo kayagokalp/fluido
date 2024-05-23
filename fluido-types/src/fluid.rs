@@ -69,8 +69,10 @@ impl FromStr for Fluid {
 impl Display for Fluid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "(")?;
+        write!(f, "fluid")?;
+        write!(f, " ")?;
         write!(f, "{}", self.concentration)?;
-        write!(f, ",")?;
+        write!(f, " ")?;
         write!(f, "{}", self.unit_volume)?;
         write!(f, ")")
     }
