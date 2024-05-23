@@ -251,11 +251,13 @@ impl<'a> egg::CostFunction<MixLang> for OpCost<'a> {
     }
 }
 
-fn generate_rewrite_rules() -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
+fn generate_rewrite_rules(
+    input_space: HashSet<Concentration>,
+) -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
     vec![
         rw!("expand-fluid-to-mix";
             "(fluid ?a ?b)" => "(mix (fluid ?a (/ ?b 2.0)) (fluid ?a (/ ?b 2.0)))"
-            if vol_valid("?b")),
+            if (fluid_valid("?a", "?b", input_space))),
         rw!("diff-mixers-l";
             "(mix (fluid ?a ?b) (fluid ?c ?b))" => "(mix (fluid (+ ?a 0.01) ?b) (fluid (- ?c 0.01) ?b))"
             if concentration_valid("?a", Op::Add, "?c", Op::Remove, 0.01)),
@@ -265,10 +267,13 @@ fn generate_rewrite_rules() -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
     ]
 }
 
-fn vol_valid(
+fn fluid_valid(
+    con: &'static str,
     vol: &'static str,
+    input_space: HashSet<Concentration>,
 ) -> impl Fn(&mut EGraph<MixLang, ArithmeticAnalysis>, Id, &Subst) -> bool {
     let var_vol: Var = vol.parse().unwrap();
+    let var_con: Var = con.parse().unwrap();
     move |egraph, _, subst| {
         let vol = subst[var_vol];
         let vol_node = &egraph[vol];
@@ -277,7 +282,12 @@ fn vol_valid(
         let res = vol / two;
         let res: f64 = res.into();
 
-        res > 0.0 && res <= 1.0
+        let col = subst[var_con];
+        let col_node = &egraph[col];
+        let col = col_node.data.clone().expect_limited_float().unwrap();
+        input_space.contains(&col);
+
+        res > 0.0 && res <= 1.0 && !input_space.contains(&col)
     }
 }
 
@@ -360,20 +370,20 @@ pub fn saturate(
             initial_egraph.add_expr(&fluid);
         }
     */
-    let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
-        .with_egraph(initial_egraph)
-        .with_node_limit(10000000000000000)
-        .with_iter_limit(100000)
-        .with_time_limit(Duration::from_secs(time_limit))
-        .run(&generate_rewrite_rules());
-
-    runner.print_report();
-
     let input_space = input_space
         .iter()
         .map(|fluid| fluid.concentration())
         .cloned()
         .collect::<HashSet<_>>();
+
+    let runner: Runner<MixLang, ArithmeticAnalysis, ()> = Runner::new(ArithmeticAnalysis)
+        .with_egraph(initial_egraph)
+        .with_node_limit(10000000000000000)
+        .with_iter_limit(100000)
+        .with_time_limit(Duration::from_secs(time_limit))
+        .run(&generate_rewrite_rules(input_space.clone()));
+
+    runner.print_report();
 
     let extractor = Extractor::new(
         &runner.egraph,
