@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::{
     num::ParseFloatError,
-    ops::{Add, Div, Sub},
+    ops::{Add, Div, Mul, Sub},
     str::FromStr,
 };
 
@@ -57,6 +57,18 @@ impl Div for LimitedFloat {
         let rhs_val: f64 = rhs.into();
 
         let res = self_val / rhs_val;
+        LimitedFloat::from(res)
+    }
+}
+
+impl Mul for LimitedFloat {
+    type Output = LimitedFloat;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let self_val: f64 = self.into();
+        let rhs_val: f64 = rhs.into();
+
+        let res = self_val * rhs_val;
         LimitedFloat::from(res)
     }
 }
@@ -152,6 +164,16 @@ mod tests {
 
         let expected: LimitedFloat = 0.5f64.into();
         let diff = num_a / num_b;
+        assert_eq!(diff, expected)
+    }
+
+    #[test]
+    fn test_mul() {
+        let num_a: LimitedFloat = 0.5f64.into();
+        let num_b: LimitedFloat = 2.0f64.into();
+
+        let expected: LimitedFloat = 1.0f64.into();
+        let diff = num_a * num_b;
         assert_eq!(diff, expected)
     }
 

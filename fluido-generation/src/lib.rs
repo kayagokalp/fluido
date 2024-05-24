@@ -12,6 +12,7 @@ define_language! {
         "+" = Add([Id; 2]),
         "-" = Sub([Id; 2]),
         "/" = Div([Id; 2]),
+        "*" = Mult([Id; 2]),
         "mix" = Mix([Id; 2]),
         "fluid" = Fluid([Id; 2]),
     }
@@ -139,6 +140,18 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
                 let result = val_a.clone() / val_b.clone();
                 ArithmeticAnalysisPayload::LimitedFloat(result)
             }
+            MixLang::Mult(mult) => {
+                let node_a_id = mult[0];
+                let node_b_id = mult[1];
+
+                let node_a = egraph[node_a_id].clone().data;
+                let node_b = egraph[node_b_id].clone().data;
+
+                let val_a = node_a.clone().expect_limited_float().unwrap();
+                let val_b = node_b.clone().expect_limited_float().unwrap();
+                let result = val_a.clone() * val_b.clone();
+                ArithmeticAnalysisPayload::LimitedFloat(result)
+            }
         }
     }
 
@@ -224,6 +237,7 @@ impl<'a> egg::CostFunction<MixLang> for OpCost<'a> {
             MixLang::Add(_) => 100.0,
             MixLang::Sub(_) => 100.0,
             MixLang::Div(_) => 100.0,
+            MixLang::Mult(_) => 100.0,
             MixLang::Mix(_) => 1.0,
             MixLang::Fluid(fl) => {
                 let conc_id = fl[0];
