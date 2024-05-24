@@ -150,17 +150,17 @@ mod tests {
 
     #[test]
     fn mix_two_diff_volumed_fluids() {
-        let concentration_a = Concentration::from(0.1);
+        let concentration_a = Concentration::from(0.04);
         let voluma_a = Volume::from(1.0);
         let fluid_a = Fluid::new(concentration_a, voluma_a);
 
-        let concentration_b = Concentration::from(0.2);
-        let voluma_b = Volume::from(2.0);
+        let concentration_b = Concentration::from(0.0);
+        let voluma_b = Volume::from(3.0);
         let fluid_b = Fluid::new(concentration_b, voluma_b);
 
         let resulting_fluid = fluid_a.mix(&fluid_b);
-        let expected_concentration = Concentration::from(0.1667);
-        let expected_volume = Volume::from(3.0);
+        let expected_concentration = Concentration::from(0.01);
+        let expected_volume = Volume::from(4.0);
         let expected_fluid = Fluid::new(expected_concentration, expected_volume);
 
         assert_eq!(expected_fluid, resulting_fluid);

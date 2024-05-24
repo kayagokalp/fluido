@@ -278,7 +278,33 @@ fn generate_rewrite_rules() -> Vec<Rewrite<MixLang, ArithmeticAnalysis>> {
             if concentration_valid("?a", Op::Add, "?c", Op::Remove, 0.1)),
         rw!("mixer-assoc";
             "(mix (fluid ?a ?b) (fluid ?c ?d))" => "(mix (fluid ?c ?d) (fluid ?a ?b))"),
+        rw!("mixer-compress-with-0";
+            "(mix (mix (fluid ?a ?b) (fluid 0.0 ?b)) (fluid 0.0 ?c))" => "(mix (fluid ?a (/ ?b 2.0)) (fluid 0.0 (* 3.0 (/ ?b 2.0))))"
+        if volume_multiple("?b", "?c", 0.5)),
     ]
+}
+
+fn volume_multiple(
+    vol_a: &'static str,
+    vol_b: &'static str,
+    multiple: f64,
+) -> impl Fn(&mut EGraph<MixLang, ArithmeticAnalysis>, Id, &Subst) -> bool {
+    let var_vol_a: Var = vol_a.parse().unwrap();
+    let var_vol_b: Var = vol_b.parse().unwrap();
+    move |egraph, _, subst| {
+        let vol_a = subst[var_vol_a];
+        let vol_node_a = &egraph[vol_a];
+        let vol_a = vol_node_a.data.clone().expect_limited_float().unwrap();
+        let vol_a_float: f64 = vol_a.clone().into();
+
+        let vol_b = subst[var_vol_b];
+        let vol_node_b = &egraph[vol_b];
+        let vol_b = vol_node_b.data.clone().expect_limited_float().unwrap();
+        let vol_b_float: f64 = vol_b.clone().into();
+
+        let div = vol_a_float / vol_b_float;
+        div == multiple
+    }
 }
 
 fn volume_valid(
@@ -364,6 +390,73 @@ pub fn generate_all_fluids() -> Vec<Fluid> {
     result
 }
 
+fn normalize_expr_by_min_volume(expr: &RecExpr<MixLang>) -> String {
+    // Find the smallest volume in the expression
+    let mut min_volume: Option<f64> = None;
+    for node in expr.as_ref() {
+        if let MixLang::Fluid(fluid) = node {
+            if let MixLang::LimitedFloat(vol) = &expr[fluid[1]] {
+                let vol_float: f64 = vol.clone().into();
+                min_volume = Some(min_volume.map_or(vol_float, |min| min.min(vol_float)));
+            }
+        }
+    }
+
+    // If there's no fluid node or min_volume is still None, return the original expression as a string
+    let min_volume = match min_volume {
+        Some(vol) => vol,
+        None => return format!("{}", expr),
+    };
+
+    // Helper function to format the nodes
+    fn format_node(expr: &RecExpr<MixLang>, id: Id, min_volume: f64) -> String {
+        match &expr[id] {
+            MixLang::Fluid(fluid) => {
+                let conc = &expr[fluid[0]];
+                let vol = &expr[fluid[1]];
+                if let MixLang::LimitedFloat(vol) = vol {
+                    let vol_float: f64 = vol.clone().into();
+                    let normalized_vol = vol_float / min_volume;
+                    if let MixLang::LimitedFloat(conc) = conc {
+                        return format!("(fluid {} {})", conc, normalized_vol);
+                    }
+                }
+                String::new()
+            }
+            MixLang::Mix(mix) => {
+                let left = format_node(expr, mix[0], min_volume);
+                let right = format_node(expr, mix[1], min_volume);
+                format!("(mix {} {})", left, right)
+            }
+            MixLang::Add(add) => {
+                let left = format_node(expr, add[0], min_volume);
+                let right = format_node(expr, add[1], min_volume);
+                format!("(+ {} {})", left, right)
+            }
+            MixLang::Sub(sub) => {
+                let left = format_node(expr, sub[0], min_volume);
+                let right = format_node(expr, sub[1], min_volume);
+                format!("(- {} {})", left, right)
+            }
+            MixLang::Div(div) => {
+                let left = format_node(expr, div[0], min_volume);
+                let right = format_node(expr, div[1], min_volume);
+                format!("(/ {} {})", left, right)
+            }
+            MixLang::Mult(mult) => {
+                let left = format_node(expr, mult[0], min_volume);
+                let right = format_node(expr, mult[1], min_volume);
+                format!("(* {} {})", left, right)
+            }
+            MixLang::LimitedFloat(lf) => format!("{}", lf),
+        }
+    }
+
+    // Format the root node
+    let root_id = expr.as_ref().len() - 1;
+    format_node(expr, Id::from(root_id), min_volume)
+}
+
 /// Saturate to find out an optimized sequence according to the cost function.
 pub fn saturate(
     target_concentration: Concentration,
@@ -399,6 +492,7 @@ pub fn saturate(
 
     let (cost, best_expr) = extractor.find_best(target);
     println!("{best_expr} cost {cost}");
+    println!("{}", normalize_expr_by_min_volume(&best_expr));
     let sequence = Sequence { cost, best_expr };
     Ok(sequence)
 }
