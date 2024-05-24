@@ -22,7 +22,7 @@ impl LimitedFloat {
         self.wrapped >= 0 && self.wrapped as f64 <= 1.0f64 / Self::EPSILON
     }
 
-    pub const EPSILON: f64 = 0.001;
+    pub const EPSILON: f64 = 0.0001;
 }
 
 impl Sub for LimitedFloat {
@@ -124,9 +124,15 @@ mod tests {
         let num_a: LimitedFloat = 0.01f64.into();
         let num_b: LimitedFloat = 0.01f64.into();
 
+        let num_c: LimitedFloat = 0.9f64.into();
+        let num_d: LimitedFloat = 0.1f64.into();
+
         let expected: LimitedFloat = 0.02f64.into();
+        let expected_2: LimitedFloat = 1.0f64.into();
         let sum = num_a + num_b;
-        assert_eq!(sum, expected)
+        let sum2 = num_c + num_d;
+        assert_eq!(sum, expected);
+        assert_eq!(sum2, expected_2);
     }
 
     #[test]
