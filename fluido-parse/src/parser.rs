@@ -1,6 +1,6 @@
 #![allow(clippy::empty_docs)]
 use fluido_types::{
-    concentration::Concentration, error::IRGenerationError, expr::Expr, fluid::Fluid,
+    concentration::LimitedFloat, error::IRGenerationError, expr::Expr, fluid::Fluid,
 };
 use pest::Parser;
 use pest_derive::Parser;
@@ -41,12 +41,8 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
         }
         Rule::float => {
             let num = pair.as_str().parse::<f64>().unwrap();
-            let concentration = Concentration::from(num);
-            Ok(Expr::Concentration(concentration))
-        }
-        Rule::integer => {
-            let num = pair.as_str().parse::<u64>().unwrap();
-            Ok(Expr::Vol(num))
+            let concentration = LimitedFloat::from(num);
+            Ok(Expr::LimitedFloat(concentration))
         }
         Rule::fluid => {
             let fluid = pair.as_str().parse::<Fluid>().unwrap();
@@ -67,7 +63,7 @@ mod tests {
 
     #[test]
     fn parse_fluid() {
-        let input_str = "(fluid 0.2 1)";
+        let input_str = "(fluid 0.2 1.0)";
         let expr = Expr::parse(input_str).unwrap();
         let expected_conc = Concentration::from(0.2);
         let expected_vol = Volume::from(1.0);
@@ -77,7 +73,7 @@ mod tests {
 
     #[test]
     fn parse_single_mix() {
-        let input_str = "(mix (fluid 0.2 1) (fluid 0.3 1))";
+        let input_str = "(mix (fluid 0.2 1.0) (fluid 0.3 1.0))";
         let expr = Expr::parse(input_str).unwrap();
         let unit_vol = Volume::from(1.0);
 
@@ -91,7 +87,7 @@ mod tests {
 
     #[test]
     fn parse_nested_mix() {
-        let input_str = "(mix (fluid 0.2 1) (mix (fluid 0.3 1) (fluid 0.4 1)))";
+        let input_str = "(mix (fluid 0.2 1.0) (mix (fluid 0.3 1.0) (fluid 0.4 1.0)))";
         let expr = Expr::parse(input_str).unwrap();
         let unit_vol = Volume::from(1.0);
         let zero_point_two = Concentration::from(0.2);

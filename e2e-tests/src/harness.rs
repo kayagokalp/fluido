@@ -44,7 +44,6 @@ pub async fn run_saturation(
         let mut result = true;
         if let Some(mixer_sequence) = &expected.mixer_sequence {
             let test_design = mixer_design.mixer_expr().to_string();
-            println!("{test_design}");
             result &= *mixer_sequence == test_design;
         }
         if let Some(storage_units) = expected.storage_units {

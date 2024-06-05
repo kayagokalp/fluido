@@ -491,9 +491,16 @@ pub fn saturate(
     );
 
     let (cost, best_expr) = extractor.find_best(target);
-    println!("{best_expr} cost {cost}");
-    println!("{}", normalize_expr_by_min_volume(&best_expr));
-    let sequence = Sequence { cost, best_expr };
+    let best_expr_normalized_str = normalize_expr_by_min_volume(&best_expr);
+    let best_expr_normalized = best_expr_normalized_str
+        .parse::<RecExpr<MixLang>>()
+        .map_err(|e| MixerGenerationError::SaturationError(e.to_string()))?;
+
+    println!("{best_expr_normalized} cost {cost}");
+    let sequence = Sequence {
+        cost,
+        best_expr: best_expr_normalized,
+    };
     Ok(sequence)
 }
 
