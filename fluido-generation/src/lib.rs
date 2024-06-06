@@ -368,8 +368,6 @@ fn concentration_valid(
         };
         let concentration_b = Concentration::from(res_b);
 
-        
-
         concentration_a.valid() && concentration_b.valid()
     }
 }
