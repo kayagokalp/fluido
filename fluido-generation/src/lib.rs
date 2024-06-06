@@ -204,7 +204,7 @@ impl<'a> OpCost<'a> {
     }
 
     fn is_fluid_in_input_space(&self, fluid: &Fluid) -> bool {
-        self.input_space.contains(&fluid.concentration())
+        self.input_space.contains(fluid.concentration())
     }
 
     fn is_direct_fluid_available(&self, fluid: &Fluid) -> bool {
@@ -368,9 +368,9 @@ fn concentration_valid(
         };
         let concentration_b = Concentration::from(res_b);
 
-        let result = concentration_a.valid() && concentration_b.valid();
+        
 
-        result
+        concentration_a.valid() && concentration_b.valid()
     }
 }
 
@@ -379,7 +379,7 @@ pub fn generate_all_fluids() -> Vec<Fluid> {
     let epsilon = Concentration::EPSILON;
     let end = (1.0 / epsilon) as usize;
 
-    let mut result = Vec::with_capacity(end as usize);
+    let mut result = Vec::with_capacity(end);
     for i in 0..end {
         let concentrationtion = Concentration::new(i as i64);
         let volume = 1.0.into();
