@@ -23,7 +23,7 @@ fn handle_args(args: Args) -> anyhow::Result<()> {
         .map(|input_concentration| {
             let conc = Concentration::from(*input_concentration);
             //TODO: Actually parse fluid vol from user.
-            Fluid::new(conc, 1)
+            Fluid::new(conc, 1.0.into())
         })
         .collect::<Vec<_>>();
     let config = Config::from(args);

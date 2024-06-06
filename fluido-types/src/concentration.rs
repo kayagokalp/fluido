@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::{
     num::ParseFloatError,
-    ops::{Add, Sub},
+    ops::{Add, Div, Mul, Sub},
     str::FromStr,
 };
 
@@ -11,6 +11,7 @@ pub struct LimitedFloat {
 }
 
 pub type Concentration = LimitedFloat;
+pub type Volume = LimitedFloat;
 
 impl LimitedFloat {
     pub fn new(wrapped: i64) -> Self {
@@ -24,7 +25,7 @@ impl LimitedFloat {
     pub const EPSILON: f64 = 0.0001;
 }
 
-impl Sub for Concentration {
+impl Sub for LimitedFloat {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -36,7 +37,7 @@ impl Sub for Concentration {
     }
 }
 
-impl Add for Concentration {
+impl Add for LimitedFloat {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -48,7 +49,31 @@ impl Add for Concentration {
     }
 }
 
-impl From<Concentration> for f64 {
+impl Div for LimitedFloat {
+    type Output = LimitedFloat;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        let self_val: f64 = self.into();
+        let rhs_val: f64 = rhs.into();
+
+        let res = self_val / rhs_val;
+        LimitedFloat::from(res)
+    }
+}
+
+impl Mul for LimitedFloat {
+    type Output = LimitedFloat;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let self_val: f64 = self.into();
+        let rhs_val: f64 = rhs.into();
+
+        let res = self_val * rhs_val;
+        LimitedFloat::from(res)
+    }
+}
+
+impl From<LimitedFloat> for f64 {
     fn from(value: Concentration) -> Self {
         let epsilon_corrected = value.wrapped as f64 * Concentration::EPSILON;
         let scale = 1f64 / Self::EPSILON;
@@ -56,7 +81,7 @@ impl From<Concentration> for f64 {
     }
 }
 
-impl From<f64> for Concentration {
+impl From<f64> for LimitedFloat {
     fn from(value: f64) -> Self {
         Self {
             wrapped: (value / Self::EPSILON).round() as i64,
@@ -64,7 +89,7 @@ impl From<f64> for Concentration {
     }
 }
 
-impl FromStr for Concentration {
+impl FromStr for LimitedFloat {
     type Err = ParseFloatError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -77,48 +102,90 @@ impl FromStr for Concentration {
     }
 }
 
-impl std::fmt::Display for Concentration {
+impl std::fmt::Display for LimitedFloat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let epsilon_corrected = self.wrapped as f64 * Self::EPSILON;
         let scale = 1f64 / Self::EPSILON;
         let truncated = (epsilon_corrected * scale).trunc() / scale;
 
-        write!(f, "{}", truncated)
+        if truncated.fract() == 0.0 {
+            write!(f, "{}.0", truncated)
+        } else {
+            write!(f, "{}", truncated)
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Concentration;
+    use super::LimitedFloat;
 
     #[test]
     fn test_precision() {
         let num_a = 0.00005;
         let num_b = 0.00009;
 
-        let conc_a = Concentration::from(num_a);
-        let conc_b = Concentration::from(num_b);
+        let conc_a = LimitedFloat::from(num_a);
+        let conc_b = LimitedFloat::from(num_b);
 
         assert_eq!(conc_a, conc_b)
     }
 
     #[test]
     fn test_addition() {
-        let num_a: Concentration = 0.01f64.into();
-        let num_b: Concentration = 0.01f64.into();
+        let num_a: LimitedFloat = 0.01f64.into();
+        let num_b: LimitedFloat = 0.01f64.into();
 
-        let expected: Concentration = 0.02f64.into();
+        let num_c: LimitedFloat = 0.9f64.into();
+        let num_d: LimitedFloat = 0.1f64.into();
+
+        let expected: LimitedFloat = 0.02f64.into();
+        let expected_2: LimitedFloat = 1.0f64.into();
         let sum = num_a + num_b;
-        assert_eq!(sum, expected)
+        let sum2 = num_c + num_d;
+        assert_eq!(sum, expected);
+        assert_eq!(sum2, expected_2);
     }
 
     #[test]
     fn test_sub() {
-        let num_a: Concentration = 0.01f64.into();
-        let num_b: Concentration = 0.01f64.into();
+        let num_a: LimitedFloat = 0.01f64.into();
+        let num_b: LimitedFloat = 0.01f64.into();
 
-        let expected: Concentration = 0f64.into();
+        let expected: LimitedFloat = 0f64.into();
         let diff = num_a - num_b;
         assert_eq!(diff, expected)
+    }
+
+    #[test]
+    fn test_div() {
+        let num_a: LimitedFloat = 1.0f64.into();
+        let num_b: LimitedFloat = 2.0f64.into();
+
+        let expected: LimitedFloat = 0.5f64.into();
+        let diff = num_a / num_b;
+        assert_eq!(diff, expected)
+    }
+
+    #[test]
+    fn test_mul() {
+        let num_a: LimitedFloat = 0.5f64.into();
+        let num_b: LimitedFloat = 2.0f64.into();
+
+        let expected: LimitedFloat = 1.0f64.into();
+        let diff = num_a * num_b;
+        assert_eq!(diff, expected)
+    }
+
+    #[test]
+    fn test_display() {
+        let num_a: LimitedFloat = 0.01f64.into();
+        let expected = "0.01";
+        let num_a_str = format!("{num_a}");
+        assert_eq!(num_a_str, expected);
+        let num_b: LimitedFloat = 0f64.into();
+        let expected = "0.0";
+        let num_b_str = format!("{num_b}");
+        assert_eq!(num_b_str, expected);
     }
 }

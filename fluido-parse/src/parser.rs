@@ -1,6 +1,6 @@
 #![allow(clippy::empty_docs)]
 use fluido_types::{
-    concentration::Concentration, error::IRGenerationError, expr::Expr, fluid::Fluid,
+    concentration::LimitedFloat, error::IRGenerationError, expr::Expr, fluid::Fluid,
 };
 use pest::Parser;
 use pest_derive::Parser;
@@ -41,12 +41,8 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
         }
         Rule::float => {
             let num = pair.as_str().parse::<f64>().unwrap();
-            let concentration = Concentration::from(num);
-            Ok(Expr::Concentration(concentration))
-        }
-        Rule::integer => {
-            let num = pair.as_str().parse::<u64>().unwrap();
-            Ok(Expr::Vol(num))
+            let concentration = LimitedFloat::from(num);
+            Ok(Expr::LimitedFloat(concentration))
         }
         Rule::fluid => {
             let fluid = pair.as_str().parse::<Fluid>().unwrap();
@@ -59,27 +55,31 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
 #[cfg(test)]
 mod tests {
     use crate::parser::Parse;
-    use fluido_types::{concentration::Concentration, expr::Expr, fluid::Fluid};
+    use fluido_types::{
+        concentration::{Concentration, Volume},
+        expr::Expr,
+        fluid::Fluid,
+    };
 
     #[test]
     fn parse_fluid() {
-        let input_str = "(fluid 0.2 1)";
+        let input_str = "(fluid 0.2 1.0)";
         let expr = Expr::parse(input_str).unwrap();
         let expected_conc = Concentration::from(0.2);
-        let expected_vol = 1;
+        let expected_vol = Volume::from(1.0);
         let expected_fluid = Expr::Fluid(Fluid::new(expected_conc, expected_vol));
         assert_eq!(expected_fluid, expr)
     }
 
     #[test]
     fn parse_single_mix() {
-        let input_str = "(mix (fluid 0.2 1) (fluid 0.3 1))";
+        let input_str = "(mix (fluid 0.2 1.0) (fluid 0.3 1.0))";
         let expr = Expr::parse(input_str).unwrap();
-        let unit_vol = 1u64;
+        let unit_vol = Volume::from(1.0);
 
         let zero_point_two = Concentration::from(0.2);
         let zero_point_three = Concentration::from(0.3);
-        let first_fluid = Expr::Fluid(Fluid::new(zero_point_two, unit_vol));
+        let first_fluid = Expr::Fluid(Fluid::new(zero_point_two, unit_vol.clone()));
         let second_fluid = Expr::Fluid(Fluid::new(zero_point_three, unit_vol));
         let expected_expr = Expr::Mix(Box::new(first_fluid), Box::new(second_fluid));
         assert_eq!(expected_expr, expr)
@@ -87,15 +87,15 @@ mod tests {
 
     #[test]
     fn parse_nested_mix() {
-        let input_str = "(mix (fluid 0.2 1) (mix (fluid 0.3 1) (fluid 0.4 1)))";
+        let input_str = "(mix (fluid 0.2 1.0) (mix (fluid 0.3 1.0) (fluid 0.4 1.0)))";
         let expr = Expr::parse(input_str).unwrap();
-        let unit_vol = 1u64;
+        let unit_vol = Volume::from(1.0);
         let zero_point_two = Concentration::from(0.2);
         let zero_point_three = Concentration::from(0.3);
         let zero_point_four = Concentration::from(0.4);
 
-        let first_fluid = Fluid::new(zero_point_two, unit_vol);
-        let second_fluid = Fluid::new(zero_point_three, unit_vol);
+        let first_fluid = Fluid::new(zero_point_two, unit_vol.clone());
+        let second_fluid = Fluid::new(zero_point_three, unit_vol.clone());
         let third_fluid = Fluid::new(zero_point_four, unit_vol);
 
         let first_fluid_expr = Expr::Fluid(first_fluid);
