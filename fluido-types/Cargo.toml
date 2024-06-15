@@ -8,3 +8,6 @@ anyhow = { workspace = true }
 egg = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true } 
+
+[dev-dependencies]
+serde_test = "1.0.176"

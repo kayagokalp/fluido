@@ -11,7 +11,7 @@ pub struct LimitedFloat {
     pub wrapped: i64,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub struct Frac {
     numerator: i32,
     power: i32,
@@ -76,10 +76,6 @@ impl Div for Frac {
 }
 
 impl LimitedFloat {
-    pub fn new(wrapped: i64) -> Self {
-        Self { wrapped }
-    }
-
     pub fn valid(&self) -> bool {
         self.wrapped >= 0 && self.wrapped as f64 <= 1.0f64 / Self::EPSILON
     }
@@ -180,9 +176,49 @@ impl std::fmt::Display for LimitedFloat {
 
 #[cfg(test)]
 mod tests {
+    use serde_test::{assert_tokens, Token};
+
     use crate::number::Frac;
 
     use super::LimitedFloat;
+
+    #[test]
+    fn test_lf_ser_de() {
+        let num_a = 0.5;
+        let num_a_wrapped = num_a / LimitedFloat::EPSILON;
+        let num_a_wrapped = num_a_wrapped as i64;
+        let conc_a = LimitedFloat::from(num_a);
+
+        assert_tokens(
+            &conc_a,
+            &[
+                Token::Struct {
+                    name: "LimitedFloat",
+                    len: 1,
+                },
+                Token::Str("wrapped"),
+                Token::I64(num_a_wrapped),
+                Token::StructEnd,
+            ],
+        );
+    }
+
+    #[test]
+    fn test_lf_valid() {
+        let num_a = 0.5;
+        let lf = LimitedFloat::from(num_a);
+
+        assert!(lf.valid())
+    }
+
+    #[test]
+    fn test_lf_not_valid() {
+        let lf = LimitedFloat { wrapped: -100 };
+        let lf2 = LimitedFloat { wrapped: 100000000 };
+
+        assert!(!lf.valid());
+        assert!(!lf2.valid())
+    }
 
     #[test]
     fn test_lf_precision() {
@@ -299,5 +335,25 @@ mod tests {
         let b = Frac::new(1, 3);
         let result = a / b;
         assert_eq!(result, Frac::new(1, -1)); // 1/4 / 1/8 = 2 = 1/2^-1
+    }
+
+    #[test]
+    fn test_frac_ser_de() {
+        let a = Frac::new(1, 2);
+
+        assert_tokens(
+            &a,
+            &[
+                Token::Struct {
+                    name: "Frac",
+                    len: 2,
+                },
+                Token::Str("numerator"),
+                Token::I32(1),
+                Token::Str("power"),
+                Token::I32(2),
+                Token::StructEnd,
+            ],
+        );
     }
 }
