@@ -9,12 +9,11 @@ use fluido_ir::{
 };
 use fluido_parse::parser::Parse;
 use fluido_types::{
-    concentration::Concentration,
     error::{
         FluidoError, IRGenerationError, InterefenceGraphGenerationError, MixerGenerationError,
     },
     expr::Expr,
-    fluid::Fluid,
+    fluid::{Concentration, Fluid},
 };
 
 /// A mixer generator for a specific target concentration from a given input space.

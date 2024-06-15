@@ -1,4 +1,4 @@
-use crate::{concentration::Concentration, fluid::Fluid};
+use crate::fluid::{Concentration, Fluid};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Expr {

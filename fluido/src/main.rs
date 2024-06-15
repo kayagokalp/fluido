@@ -3,7 +3,7 @@ mod cmd;
 use clap::Parser;
 use cmd::Args;
 use fluido_core::{Config, LogConfig, MixerGenerationConfig, MixerGenerator};
-use fluido_types::{concentration::Concentration, fluid::Fluid};
+use fluido_types::fluid::{Concentration, Fluid};
 
 fn main() -> anyhow::Result<()> {
     let args = Args::try_parse()?;

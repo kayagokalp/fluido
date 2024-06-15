@@ -1,8 +1,7 @@
 use egg::{rewrite as rw, *};
 use fluido_types::{
-    concentration::{Concentration, LimitedFloat, Volume},
     error::MixerGenerationError,
-    fluid::Fluid,
+    fluid::{Concentration, Fluid, LimitedFloat, Volume},
 };
 use std::{collections::HashSet, time::Duration};
 
