@@ -1,4 +1,5 @@
 # fluido
+[![codecov](https://codecov.io/gh/kayagokalp/fluido/graph/badge.svg?token=YSHCS84CQ5)](https://codecov.io/gh/kayagokalp/fluido)
 
 A mixer searching and scheduling experiment using equality saturation, more specifically `egg`.
 
