@@ -17,7 +17,6 @@ async fn main() -> anyhow::Result<()> {
     };
     let run_config = RunConfig {
         verbose: args.verbose,
-        update_output_files: args.update_output_files,
     };
 
     run(&run_config, &filter_config).await?;

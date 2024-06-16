@@ -15,10 +15,6 @@ pub struct Args {
     /// Print out warnings, errors, and output of print options
     #[arg(long, env = "FLUIDO_TEST_VERBOSE")]
     pub verbose: bool,
-
-    /// Update all output files
-    #[arg(long)]
-    pub update_output_files: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -30,5 +26,4 @@ pub struct FilterConfig {
 #[derive(Debug, Clone)]
 pub struct RunConfig {
     pub verbose: bool,
-    pub update_output_files: bool,
 }
