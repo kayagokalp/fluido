@@ -1,6 +1,8 @@
 use std::{fmt::Display, num::ParseFloatError, str::FromStr};
 
-use crate::concentration::{Concentration, Volume};
+pub use crate::number::LimitedFloat;
+pub type Concentration = LimitedFloat;
+pub type Volume = LimitedFloat;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Fluid {
@@ -123,11 +125,8 @@ impl Fluid {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::str::FromStr;
-
-    use crate::concentration::{Concentration, Volume};
-
-    use super::Fluid;
 
     #[test]
     fn mix_two_equal_volume_fluids() {

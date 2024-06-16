@@ -1,8 +1,7 @@
 use egg::{rewrite as rw, *};
 use fluido_types::{
-    concentration::{Concentration, LimitedFloat, Volume},
     error::MixerGenerationError,
-    fluid::Fluid,
+    fluid::{Concentration, Fluid, LimitedFloat, Volume},
 };
 use std::{collections::HashSet, time::Duration};
 
@@ -370,22 +369,6 @@ fn concentration_valid(
 
         concentration_a.valid() && concentration_b.valid()
     }
-}
-
-/// Generate all possible fluids with given start and end with step sizes.
-pub fn generate_all_fluids() -> Vec<Fluid> {
-    let epsilon = Concentration::EPSILON;
-    let end = (1.0 / epsilon) as usize;
-
-    let mut result = Vec::with_capacity(end);
-    for i in 0..end {
-        let concentrationtion = Concentration::new(i as i64);
-        let volume = 1.0.into();
-        let fluid = Fluid::new(concentrationtion, volume);
-        result.push(fluid);
-    }
-
-    result
 }
 
 fn normalize_expr_by_min_volume(expr: &RecExpr<MixLang>) -> String {

@@ -1,6 +1,8 @@
 #![allow(clippy::empty_docs)]
 use fluido_types::{
-    concentration::LimitedFloat, error::IRGenerationError, expr::Expr, fluid::Fluid,
+    error::IRGenerationError,
+    expr::Expr,
+    fluid::{Fluid, LimitedFloat},
 };
 use pest::Parser;
 use pest_derive::Parser;
@@ -56,9 +58,8 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
 mod tests {
     use crate::parser::Parse;
     use fluido_types::{
-        concentration::{Concentration, Volume},
         expr::Expr,
-        fluid::Fluid,
+        fluid::{Concentration, Fluid, Volume},
     };
 
     #[test]

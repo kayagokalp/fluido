@@ -1,4 +1,4 @@
-use crate::concentration::Concentration;
+use crate::fluid::Concentration;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
