@@ -1,3 +1,4 @@
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 use crate::ir::IROp;
 use std::collections::{HashMap, HashSet};
 
@@ -8,6 +9,7 @@ pub struct IRPassManager<'a> {
 }
 
 impl<'a> IRPassManager<'a> {
+    #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn new(ir_to_pass_over: Vec<IROp>, analysis_passes: Vec<&'a dyn AnalysisPass>) -> Self {
         Self {
             ir_to_pass_over,
@@ -42,4 +44,76 @@ pub struct AnalysisResult {
 pub trait AnalysisPass {
     fn pass_name(&self) -> &str;
     fn analyze(&self, ir_to_pass_over: &[IROp]) -> AnalysisResult;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{AnalysisPass, AnalysisResult, IRPassManager};
+    use crate::ir::IROp;
+    use std::collections::HashSet;
+
+    #[derive(Debug)]
+    struct DummyAnalysisPass {
+        name: &'static str,
+    }
+
+    impl AnalysisPass for DummyAnalysisPass {
+        fn pass_name(&self) -> &str {
+            self.name
+        }
+
+        fn analyze(&self, _ir_to_pass_over: &[IROp]) -> AnalysisResult {
+            AnalysisResult {
+                sets_per_ir: vec![HashSet::new()],
+            }
+        }
+    }
+
+    #[test]
+    fn test_register_analysis_pass() {
+        let ir = vec![];
+        let mut manager = IRPassManager::new(ir, vec![]);
+        let pass = DummyAnalysisPass { name: "dummy_pass" };
+
+        manager.register_analysis_pass(&pass);
+
+        assert_eq!(manager.analysis_passes.len(), 1);
+        assert_eq!(manager.analysis_passes[0].pass_name(), "dummy_pass");
+    }
+
+    #[test]
+    fn test_apply_analysis_passes() {
+        let ir = vec![];
+        let pass1 = DummyAnalysisPass { name: "pass1" };
+        let pass2 = DummyAnalysisPass { name: "pass2" };
+
+        let mut manager = IRPassManager::new(ir, vec![&pass1]);
+        manager.register_analysis_pass(&pass2);
+
+        let results = manager.apply_analysis_passes();
+
+        assert_eq!(results.len(), 2);
+        assert!(results.contains_key("pass1"));
+        assert!(results.contains_key("pass2"));
+        assert_eq!(results["pass1"].sets_per_ir.len(), 1);
+        assert_eq!(results["pass2"].sets_per_ir.len(), 1);
+    }
+
+    #[test]
+    fn test_analysis_result_default() {
+        let result = AnalysisResult::default();
+        assert!(result.sets_per_ir.is_empty());
+    }
+
+    #[test]
+    fn test_dummy_analysis_pass() {
+        let ir = vec![];
+        let pass = DummyAnalysisPass { name: "dummy_pass" };
+
+        let result = pass.analyze(&ir);
+
+        assert_eq!(pass.pass_name(), "dummy_pass");
+        assert_eq!(result.sets_per_ir.len(), 1);
+        assert!(result.sets_per_ir[0].is_empty());
+    }
 }
