@@ -1,4 +1,3 @@
-#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 use fluido_types::expr::Expr;
 use petgraph::graph::{DiGraph, NodeIndex};
 
@@ -40,7 +39,6 @@ impl Graph {
         self.root
     }
 
-    #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn dot(&self) -> String {
         format!(
             "{:?}",
@@ -107,5 +105,15 @@ mod tests {
 
         assert_eq!(graph_wrapper.graph.node_count(), 5); // Two Mix and three Numbers
         assert_eq!(graph_wrapper.graph.edge_count(), 4); // Edges connecting Mixes to Numbers
+    }
+
+    #[test]
+    fn graph_to_dot() {
+        let expr_str = "(mix (mix (fluid 0.0 1) (fluid 0.2 1)) (fluid 0.1 1))";
+        let expr = Expr::parse(expr_str).unwrap();
+        let graph_wrapper: Graph = (&expr).into();
+        let dot = graph_wrapper.dot();
+        let expected = "digraph {\n    0 [ label = mix]\n    1 [ label = mix]\n    2 [ label = (fluid 0.0 1.0)]\n    3 [ label = (fluid 0.2 1.0)]\n    4 [ label = (fluid 0.1 1.0)]\n    1 -> 2 [ label = \"()\"]\n    1 -> 3 [ label = \"()\"]\n    0 -> 1 [ label = \"()\"]\n    0 -> 4 [ label = \"()\"]\n}\n";
+        assert_eq!(dot, expected)
     }
 }
