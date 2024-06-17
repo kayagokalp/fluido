@@ -32,3 +32,43 @@ impl std::fmt::Display for Operand {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    #[cfg(test)]
+    mod tests {
+        use crate::ir::{IROp, Operand};
+        use fluido_types::fluid::{Concentration, Fluid, Volume};
+
+        fn get_dummy_fluid() -> Fluid {
+            let concentration_a = Concentration::from(0.1);
+            let voluma_a = Volume::from(1.0);
+            Fluid::new(concentration_a, voluma_a)
+        }
+        #[test]
+        fn test_operand_display() {
+            let const_op = Operand::Const(get_dummy_fluid());
+            assert_eq!(format!("{}", const_op), "(fluid 0.1 1.0)");
+
+            let vreg_op = Operand::VirtualRegister(42);
+            assert_eq!(format!("{}", vreg_op), "%42");
+        }
+
+        #[test]
+        fn test_irops_display() {
+            let store_op = IROp::Store((
+                Operand::Const(get_dummy_fluid()),
+                Operand::VirtualRegister(1),
+            ));
+            assert_eq!(format!("{}", store_op), "store (fluid 0.1 1.0) %1");
+
+            let mix_op = IROp::Mix((
+                Operand::VirtualRegister(1),
+                Operand::VirtualRegister(2),
+                Operand::VirtualRegister(3),
+            ));
+            assert_eq!(format!("{}", mix_op), "mix %1 %2 %3");
+        }
+    }
+}
