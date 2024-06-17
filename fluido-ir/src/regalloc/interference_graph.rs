@@ -1,3 +1,4 @@
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 use std::collections::{HashMap, HashSet};
 
 use petgraph::prelude::UnGraph;
@@ -19,6 +20,8 @@ impl InterferenceGraph {
     pub fn new(graph: UnGraph<usize, ()>) -> Self {
         Self { graph }
     }
+
+    #[cfg_attr(coverage_nightly, coverage(off))]
     pub fn dot(&self) -> String {
         format!("{:?}", petgraph::dot::Dot::new(&self.graph))
     }
@@ -144,5 +147,72 @@ impl<'a> InterferenceGraphBuilder<'a> {
             }
         }
         InterferenceGraph::new(graph)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_interference_graph_builder() {
+        let liveness_analysis = vec![
+            vec![0, 1].into_iter().collect(),
+            vec![1, 2].into_iter().collect(),
+            vec![2, 3].into_iter().collect(),
+            vec![3, 4].into_iter().collect(),
+        ];
+        let builder = InterferenceGraphBuilder::new(&liveness_analysis);
+        let graph = builder.build();
+
+        assert_eq!(graph.graph.node_count(), 5);
+        assert_eq!(graph.graph.edge_count(), 4);
+    }
+
+    #[test]
+    fn test_try_coloring_success() {
+        let liveness_analysis = vec![
+            vec![0, 1].into_iter().collect(),
+            vec![1, 2].into_iter().collect(),
+            vec![2, 3].into_iter().collect(),
+            vec![3, 4].into_iter().collect(),
+        ];
+        let builder = InterferenceGraphBuilder::new(&liveness_analysis);
+        let graph = builder.build();
+
+        let coloring = graph.try_coloring(5);
+        assert!(coloring.is_some());
+        let coloring = coloring.unwrap();
+        assert_eq!(coloring.len(), 5);
+    }
+
+    #[test]
+    fn test_try_coloring_failure() {
+        let liveness_analysis = vec![
+            vec![0, 1].into_iter().collect(),
+            vec![1, 2].into_iter().collect(),
+            vec![2, 3].into_iter().collect(),
+            vec![3, 4].into_iter().collect(),
+        ];
+        let builder = InterferenceGraphBuilder::new(&liveness_analysis);
+        let graph = builder.build();
+
+        let coloring = graph.try_coloring(1);
+        assert!(coloring.is_none());
+    }
+
+    #[test]
+    fn test_find_min_color_count() {
+        let liveness_analysis = vec![
+            vec![0, 1].into_iter().collect(),
+            vec![1, 2].into_iter().collect(),
+            vec![2, 3].into_iter().collect(),
+            vec![3, 4].into_iter().collect(),
+        ];
+        let builder = InterferenceGraphBuilder::new(&liveness_analysis);
+        let graph = builder.build();
+
+        let min_colors = graph.find_min_color_count();
+        assert_eq!(min_colors, 2);
     }
 }
