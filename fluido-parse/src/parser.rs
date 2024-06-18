@@ -2,7 +2,7 @@
 use fluido_types::{
     error::IRGenerationError,
     expr::Expr,
-    fluid::{Fluid, LimitedFloat},
+    fluid::{Fluid, Number},
 };
 use pest::Parser;
 use pest_derive::Parser;
@@ -43,8 +43,8 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
         }
         Rule::float => {
             let num = pair.as_str().parse::<f64>().unwrap();
-            let concentration = LimitedFloat::from(num);
-            Ok(Expr::LimitedFloat(concentration))
+            let concentration = Number::from(num);
+            Ok(Expr::Number(concentration))
         }
         Rule::fluid => {
             let fluid = pair.as_str().parse::<Fluid>().unwrap();

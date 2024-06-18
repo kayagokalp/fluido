@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 egg = { workspace = true }
+fraction = { version = "0.15.3", features = ["with-serde-support"] }
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true } 
 

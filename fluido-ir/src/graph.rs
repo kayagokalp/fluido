@@ -54,7 +54,7 @@ impl Graph {
                     let node_label = match _node {
                         Expr::Mix(_, _) => "mix".to_string(),
                         Expr::Fluid(fl) => format!("{}", fl),
-                        Expr::LimitedFloat(fl) => format!("{}", fl),
+                        Expr::Number(nm) => format!("{}", nm),
                     };
                     format!("label = {}", node_label)
                 },
