@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use fluido_core::{search_mixer_design, Config};
-use fluido_types::fluid::Fluid;
+use fluido_types::fluid::{Fluid, Number};
 
 use crate::{manifest::TestManifest, util::run_and_capture_output};
 
@@ -23,7 +23,7 @@ pub async fn run_saturation(
                 // Convert the error into anyhow error.
                 Fluid::from_str(&fluid_str).map_err(|err| err.into())
             })
-            .collect::<anyhow::Result<Vec<Fluid>>>()?;
+            .collect::<anyhow::Result<Vec<Fluid<Number>>>>()?;
         let target_fluids = setup
             .target
             .values()
@@ -35,11 +35,11 @@ pub async fn run_saturation(
                 // Convert the error into anyhow error.
                 Fluid::from_str(&fluid_str).map_err(|err| err.into())
             })
-            .collect::<anyhow::Result<Vec<Fluid>>>()?;
+            .collect::<anyhow::Result<Vec<Fluid<Number>>>>()?;
 
-        let target_concentration = target_fluids[0].concentration().clone();
+        let target_concentration: Number = target_fluids[0].concentration().clone();
         let mixer_design =
-            search_mixer_design(config, target_concentration, input_fluids.as_ref())?;
+            search_mixer_design::<Number>(config, target_concentration, input_fluids.as_ref())?;
 
         let mut result = true;
         if let Some(mixer_sequence) = &expected.mixer_sequence {

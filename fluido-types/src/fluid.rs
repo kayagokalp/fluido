@@ -1,15 +1,11 @@
-use std::{
-    fmt::Display,
-    ops::{Add, Div, Mul},
-    str::FromStr,
-};
+use std::{fmt::Display, str::FromStr};
 
 use crate::number::SaturationNumber;
 pub use crate::number::{Frac, LimitedFloat};
 
 pub type Number = Frac;
-pub type Concentration = Frac;
-pub type Volume = Frac;
+pub type Concentration = Number;
+pub type Volume = Number;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Fluid<T: SaturationNumber> {
@@ -88,7 +84,7 @@ impl<T: SaturationNumber> Display for Fluid<T> {
 }
 
 // TODO: Make fluid generic over number type.
-impl<T: SaturationNumber + Mul<Output = T> + Add<Output = T> + Div<Output = T>> Fluid<T> {
+impl<T: SaturationNumber> Fluid<T> {
     /// Creates a new fluid.
     ///
     /// Note: Assumes the volume is non-zero.

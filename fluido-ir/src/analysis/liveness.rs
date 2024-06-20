@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use fluido_types::number::SaturationNumber;
+
 use crate::{
     ir::{IROp, Operand},
     pass_manager::{AnalysisPass, AnalysisResult},
@@ -8,8 +10,8 @@ use crate::{
 #[derive(Default)]
 pub struct LivenessAnalysis {}
 
-impl AnalysisPass for LivenessAnalysis {
-    fn analyze(&self, ir_to_pass_over: &[IROp]) -> crate::pass_manager::AnalysisResult {
+impl<T: SaturationNumber> AnalysisPass<T> for LivenessAnalysis {
+    fn analyze(&self, ir_to_pass_over: &[IROp<T>]) -> crate::pass_manager::AnalysisResult {
         let mut live_regs = vec![];
         let mut ir = ir_to_pass_over.to_vec();
         ir.reverse();
@@ -67,10 +69,10 @@ mod tests {
     use super::LivenessAnalysis;
     use crate::{graph::Graph, ir::IROp, ir_builder::IRBuilder, pass_manager::AnalysisPass};
     use fluido_parse::parser::Parse;
-    use fluido_types::expr::Expr;
+    use fluido_types::{expr::Expr, fluid::LimitedFloat, number::SaturationNumber};
     use std::collections::HashSet;
 
-    fn ir_from_str(input_str: &str) -> Vec<IROp> {
+    fn ir_from_str<T: SaturationNumber>(input_str: &str) -> Vec<IROp<T>> {
         let mix_expr_parsed = Expr::parse(input_str).unwrap();
         let mixer_graph = Graph::from(&mix_expr_parsed);
         let mut ir_builder = IRBuilder::default();
@@ -78,9 +80,9 @@ mod tests {
     }
 
     #[test]
-    fn single_mix_test() {
+    fn single_mix_test_lf() {
         let mix_expr = "(mix (fluid 0.2 1) (fluid 0.2 1))";
-        let ir = ir_from_str(mix_expr);
+        let ir: Vec<IROp<LimitedFloat>> = ir_from_str(mix_expr);
         let liveness_analysis = LivenessAnalysis {};
         let result = liveness_analysis.analyze(&ir);
 

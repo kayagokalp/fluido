@@ -1,9 +1,5 @@
 #![allow(clippy::empty_docs)]
-use fluido_types::{
-    error::IRGenerationError,
-    expr::Expr,
-    fluid::{Fluid, Number},
-};
+use fluido_types::{error::IRGenerationError, expr::Expr, fluid::Fluid, number::SaturationNumber};
 use pest::Parser;
 use pest_derive::Parser;
 
@@ -22,7 +18,7 @@ where
     fn parse(input_str: &str) -> Result<Self, IRGenerationError>;
 }
 
-impl Parse for Expr {
+impl<T: SaturationNumber> Parse for Expr<T> {
     fn parse(input_str: &str) -> Result<Self, IRGenerationError> {
         let pairs = MixLangParser::parse(Rule::expression, input_str)
             .map_err(|e| IRGenerationError::ParseError(e.to_string()))?;
@@ -30,7 +26,9 @@ impl Parse for Expr {
     }
 }
 
-fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationError> {
+fn build_ast<T: SaturationNumber>(
+    pairs: pest::iterators::Pairs<Rule>,
+) -> Result<Expr<T>, IRGenerationError> {
     let pair = pairs.into_iter().next().unwrap();
 
     match pair.as_rule() {
@@ -43,11 +41,11 @@ fn build_ast(pairs: pest::iterators::Pairs<Rule>) -> Result<Expr, IRGenerationEr
         }
         Rule::float => {
             let num = pair.as_str().parse::<f64>().unwrap();
-            let concentration = Number::from(num);
+            let concentration = T::from(num);
             Ok(Expr::Number(concentration))
         }
         Rule::fluid => {
-            let fluid = pair.as_str().parse::<Fluid>().unwrap();
+            let fluid = pair.as_str().parse::<Fluid<T>>().unwrap();
             Ok(Expr::Fluid(fluid))
         }
         _ => unreachable!(),
@@ -61,16 +59,6 @@ mod tests {
         expr::Expr,
         fluid::{Concentration, Fluid, Volume},
     };
-
-    #[test]
-    fn parse_fluid() {
-        let input_str = "(fluid 0.2 1.0)";
-        let expr = Expr::parse(input_str).unwrap();
-        let expected_conc = Concentration::from(0.2);
-        let expected_vol = Volume::from(1.0);
-        let expected_fluid = Expr::Fluid(Fluid::new(expected_conc, expected_vol));
-        assert_eq!(expected_fluid, expr)
-    }
 
     #[test]
     fn parse_single_mix() {

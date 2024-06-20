@@ -1,23 +1,28 @@
 #![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+use fluido_types::number::SaturationNumber;
+
 use crate::ir::IROp;
 use std::collections::{HashMap, HashSet};
 
 /// Manages possible analysis passes over flat mixlang ir.
-pub struct IRPassManager<'a> {
-    ir_to_pass_over: Vec<IROp>,
-    analysis_passes: Vec<&'a dyn AnalysisPass>,
+pub struct IRPassManager<'a, T: SaturationNumber> {
+    ir_to_pass_over: Vec<IROp<T>>,
+    analysis_passes: Vec<&'a dyn AnalysisPass<T>>,
 }
 
-impl<'a> IRPassManager<'a> {
+impl<'a, T: SaturationNumber> IRPassManager<'a, T> {
     #[cfg_attr(coverage_nightly, coverage(off))]
-    pub fn new(ir_to_pass_over: Vec<IROp>, analysis_passes: Vec<&'a dyn AnalysisPass>) -> Self {
+    pub fn new(
+        ir_to_pass_over: Vec<IROp<T>>,
+        analysis_passes: Vec<&'a dyn AnalysisPass<T>>,
+    ) -> Self {
         Self {
             ir_to_pass_over,
             analysis_passes,
         }
     }
 
-    pub fn register_analysis_pass(&mut self, pass_to_register: &'a dyn AnalysisPass) {
+    pub fn register_analysis_pass(&mut self, pass_to_register: &'a dyn AnalysisPass<T>) {
         self.analysis_passes.push(pass_to_register);
     }
 
@@ -41,13 +46,15 @@ pub struct AnalysisResult {
     pub sets_per_ir: Vec<HashSet<usize>>,
 }
 
-pub trait AnalysisPass {
+pub trait AnalysisPass<T: SaturationNumber> {
     fn pass_name(&self) -> &str;
-    fn analyze(&self, ir_to_pass_over: &[IROp]) -> AnalysisResult;
+    fn analyze(&self, ir_to_pass_over: &[IROp<T>]) -> AnalysisResult;
 }
 
 #[cfg(test)]
 mod tests {
+    use fluido_types::fluid::LimitedFloat;
+
     use super::{AnalysisPass, AnalysisResult, IRPassManager};
     use crate::ir::IROp;
     use std::collections::HashSet;
@@ -57,12 +64,12 @@ mod tests {
         name: &'static str,
     }
 
-    impl AnalysisPass for DummyAnalysisPass {
+    impl AnalysisPass<LimitedFloat> for DummyAnalysisPass {
         fn pass_name(&self) -> &str {
             self.name
         }
 
-        fn analyze(&self, _ir_to_pass_over: &[IROp]) -> AnalysisResult {
+        fn analyze(&self, _ir_to_pass_over: &[IROp<LimitedFloat>]) -> AnalysisResult {
             AnalysisResult {
                 sets_per_ir: vec![HashSet::new()],
             }

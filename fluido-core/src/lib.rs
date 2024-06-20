@@ -13,7 +13,8 @@ use fluido_types::{
         FluidoError, IRGenerationError, InterefenceGraphGenerationError, MixerGenerationError,
     },
     expr::Expr,
-    fluid::{Concentration, Fluid},
+    fluid::{Concentration, Fluid, Number},
+    number::SaturationNumber,
 };
 
 /// A mixer generator for a specific target concentration from a given input space.
@@ -115,7 +116,7 @@ impl MixerGenerationConfig {
 /// Generate a mixer for the target_concentration from input space.
 fn generate_mixer_sequence(
     target_concentration: Concentration,
-    input_space: &[Fluid],
+    input_space: &[Fluid<Number>],
     time_limit: u64,
     mixer_generator: MixerGenerator,
 ) -> Result<Sequence, MixerGenerationError> {
@@ -129,7 +130,7 @@ fn generate_mixer_sequence(
 }
 
 /// Generates a `mixer-graph` from expr.
-fn generate_graph(sequence: Sequence) -> Result<Graph, IRGenerationError> {
+fn generate_graph<T: SaturationNumber>(sequence: Sequence) -> Result<Graph<T>, IRGenerationError> {
     let best_expr = sequence.best_expr;
     let expr_str = format!("{best_expr}");
     let expr = Expr::parse(&expr_str)?;
@@ -137,8 +138,8 @@ fn generate_graph(sequence: Sequence) -> Result<Graph, IRGenerationError> {
 }
 
 /// Generates interference graph from flat ir.
-fn generate_interference_graph(
-    ir_ops: Vec<IROp>,
+fn generate_interference_graph<T: SaturationNumber>(
+    ir_ops: Vec<IROp<T>>,
     show_liveness: bool,
 ) -> Result<InterferenceGraph, InterefenceGraphGenerationError> {
     let mut ir_pass_manager = IRPassManager::new(ir_ops.clone(), vec![]);
@@ -166,10 +167,10 @@ fn generate_interference_graph(
 /// Searches a mixer design which is:
 ///  1- Valid in terms of the inputs it is using.
 ///  2- Uses minimum number of storage units. (IN-PROGRESS)
-pub fn search_mixer_design(
+pub fn search_mixer_design<T: SaturationNumber>(
     config: Config,
-    target_concentration: Concentration,
-    input_space: &[Fluid],
+    target_concentration: Number,
+    input_space: &[Fluid<Number>],
 ) -> Result<MixerDesign, FluidoError> {
     let mixer_generator = config.generation.generator;
     let time_limit = config.generation.time_limit;
@@ -184,7 +185,7 @@ pub fn search_mixer_design(
     let expr_str = format!("{}", mixer_sequence.best_expr);
     let cost = mixer_sequence.cost;
 
-    let graph = generate_graph(mixer_sequence)?;
+    let graph: Graph<Number> = generate_graph(mixer_sequence)?;
     if config.logging.show_mixer_graph {
         println!("{}", graph.dot());
     }

@@ -1,18 +1,18 @@
-use fluido_types::expr::Expr;
+use fluido_types::{expr::Expr, number::SaturationNumber};
 use petgraph::graph::{DiGraph, NodeIndex};
 
-pub struct Graph {
-    graph: DiGraph<Expr, ()>,
+pub struct Graph<T: SaturationNumber> {
+    graph: DiGraph<Expr<T>, ()>,
     root: Option<NodeIndex>,
 }
 
-impl AsRef<DiGraph<Expr, ()>> for Graph {
-    fn as_ref(&self) -> &DiGraph<Expr, ()> {
+impl<T: SaturationNumber> AsRef<DiGraph<Expr<T>, ()>> for Graph<T> {
+    fn as_ref(&self) -> &DiGraph<Expr<T>, ()> {
         &self.graph
     }
 }
 
-impl Graph {
+impl<T: SaturationNumber> Graph<T> {
     fn new() -> Self {
         Self {
             graph: DiGraph::new(),
@@ -20,7 +20,7 @@ impl Graph {
         }
     }
 
-    fn add_expr(&mut self, expr: &Expr) -> NodeIndex {
+    fn add_expr(&mut self, expr: &Expr<T>) -> NodeIndex {
         let index = self.graph.add_node(expr.clone());
         if self.root.is_none() {
             self.root = Some(index);
@@ -63,8 +63,8 @@ impl Graph {
     }
 }
 
-impl From<&Expr> for Graph {
-    fn from(expr: &Expr) -> Self {
+impl<T: SaturationNumber> From<&Expr<T>> for Graph<T> {
+    fn from(expr: &Expr<T>) -> Self {
         let mut wrapper = Graph::new();
         wrapper.add_expr(expr);
         wrapper
@@ -74,44 +74,45 @@ impl From<&Expr> for Graph {
 #[cfg(test)]
 mod tests {
     use fluido_parse::parser::Parse;
+    use fluido_types::fluid::LimitedFloat;
 
     use super::*;
 
     #[test]
-    fn test_single_fluid() {
+    fn test_single_fluid_lf() {
         let expr_str = "(fluid 0.5 1)";
         let expr = Expr::parse(expr_str).unwrap();
-        let graph_wrapper: Graph = (&expr).into();
+        let graph_wrapper: Graph<LimitedFloat> = (&expr).into();
 
         assert_eq!(graph_wrapper.graph.node_count(), 1);
         assert_eq!(graph_wrapper.graph.edge_count(), 0);
     }
 
     #[test]
-    fn test_simple_mix() {
+    fn test_simple_mix_lf() {
         let expr_str = "(mix (fluid 0.1 1) (fluid 0.2 1))";
         let expr = Expr::parse(expr_str).unwrap();
-        let graph_wrapper: Graph = (&expr).into();
+        let graph_wrapper: Graph<LimitedFloat> = (&expr).into();
 
         assert_eq!(graph_wrapper.graph.node_count(), 3); // One Mix and two Numbers
         assert_eq!(graph_wrapper.graph.edge_count(), 2); // Two edges from Mix to Numbers
     }
 
     #[test]
-    fn test_nested_mix() {
+    fn test_nested_mix_lf() {
         let expr_str = "(mix (mix (fluid 0.0 1) (fluid 0.2 1)) (fluid 0.1 1))";
         let expr = Expr::parse(expr_str).unwrap();
-        let graph_wrapper: Graph = (&expr).into();
+        let graph_wrapper: Graph<LimitedFloat> = (&expr).into();
 
         assert_eq!(graph_wrapper.graph.node_count(), 5); // Two Mix and three Numbers
         assert_eq!(graph_wrapper.graph.edge_count(), 4); // Edges connecting Mixes to Numbers
     }
 
     #[test]
-    fn graph_to_dot() {
+    fn graph_to_dot_lf() {
         let expr_str = "(mix (mix (fluid 0.0 1) (fluid 0.2 1)) (fluid 0.1 1))";
         let expr = Expr::parse(expr_str).unwrap();
-        let graph_wrapper: Graph = (&expr).into();
+        let graph_wrapper: Graph<LimitedFloat> = (&expr).into();
         let dot = graph_wrapper.dot();
         let expected = "digraph {\n    0 [ label = mix]\n    1 [ label = mix]\n    2 [ label = (fluid 0.0 1.0)]\n    3 [ label = (fluid 0.2 1.0)]\n    4 [ label = (fluid 0.1 1.0)]\n    1 -> 2 [ label = \"()\"]\n    1 -> 3 [ label = \"()\"]\n    0 -> 1 [ label = \"()\"]\n    0 -> 4 [ label = \"()\"]\n}\n";
         assert_eq!(dot, expected)

@@ -2,12 +2,26 @@ use fraction::Fraction;
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{Debug, Display},
+    hash::Hash,
     ops::{Add, Div, Mul, Sub},
     str::FromStr,
 };
 
 pub trait SaturationNumber:
-    Clone + From<f64> + Into<f64> + Display + Add + Sub + Mul + Div + Debug
+    Clone
+    + From<f64>
+    + Into<f64>
+    + Display
+    + Debug
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + Add<Output = Self>
+    + Div<Output = Self>
+    + Hash
+    + PartialEq
+    + Eq
+    + Ord
+    + PartialOrd
 {
     fn valid(&self) -> bool;
     fn parse(str: &str) -> anyhow::Result<Self>;
@@ -72,22 +86,17 @@ impl Div for Frac {
     }
 }
 
-// TODO: differentiate this from LimitedFloat.
 impl FromStr for Frac {
     type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let lf = LimitedFloat::from_str(s)?;
-        let f64_val: f64 = lf.into();
-        Ok(Self::from(f64_val))
+        let fraction = s.parse::<Fraction>()?;
+        Ok(Self { fraction })
     }
 }
 
-// TODO: differentiate this from LimitedFloat.
 impl Display for Frac {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let f64_val: f64 = self.into();
-        let lf = LimitedFloat::from(f64_val);
-        write!(f, "{}", lf)
+        write!(f, "{}", self.fraction)
     }
 }
 
@@ -350,7 +359,7 @@ mod tests {
     }
 
     #[test]
-    fn test_frac_add_same_power() {
+    fn test_frac_add_same_dividend() {
         let a = Frac::new(1, 2);
         let b = Frac::new(1, 2);
         let result = a + b;
@@ -358,7 +367,7 @@ mod tests {
     }
 
     #[test]
-    fn test_frac_add_different_power() {
+    fn test_frac_add_different_dividend() {
         let a = Frac::new(1, 2);
         let b = Frac::new(1, 3);
         let result = a + b;
@@ -366,7 +375,7 @@ mod tests {
     }
 
     #[test]
-    fn test_frac_sub_same_power() {
+    fn test_frac_sub_same_dividend() {
         let a = Frac::new(2, 2);
         let b = Frac::new(1, 2);
         let result = a - b;
@@ -374,7 +383,7 @@ mod tests {
     }
 
     #[test]
-    fn test_frac_sub_different_power() {
+    fn test_frac_sub_different_dividend() {
         let a = Frac::new(1, 2);
         let b = Frac::new(1, 3);
         let result = a - b;
@@ -430,10 +439,10 @@ mod tests {
 
     #[test]
     fn frac_from_str() {
-        let frac_str = "0.5";
+        let frac_str = "1/10";
         let frac = frac_str.parse::<Frac>().unwrap();
         let expected_num = 1;
-        let expected_pow = 2;
+        let expected_pow = 10;
         let expected_frac = Frac::new(expected_num, expected_pow);
 
         assert_eq!(frac, expected_frac)
@@ -441,7 +450,7 @@ mod tests {
 
     #[test]
     fn frac_display() {
-        let expected_frac_str = "0.5";
+        let expected_frac_str = "1/2";
         let num = 1;
         let pow = 2;
         let frac = Frac::new(num, pow);
@@ -478,6 +487,10 @@ mod tests {
         let value = 3.0;
         let frac: Frac = value.into();
         assert_eq!(frac, Frac::new(3, 1)); // 3.0 = 3/2^0
+
+        let value = 0.1;
+        let frac: Frac = value.into();
+        assert_eq!(frac, Frac::new(1, 10)); // 0.1 = 1/10
     }
 
     #[test]

@@ -7,6 +7,7 @@ use fluido_types::{
 use std::{collections::HashSet, time::Duration};
 
 define_language! {
+    // TODO: `define_language!` macro does not support generics, fix this.
     pub enum MixLang {
         Number(Number),
         "+" = Add([Id; 2]),
@@ -21,14 +22,14 @@ define_language! {
 struct ArithmeticAnalysis;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-enum ArithmeticAnalysisPayload {
-    Number(Number),
-    Fluid(Fluid),
+enum ArithmeticAnalysisPayload<T: SaturationNumber> {
+    Number(T),
+    Fluid(Fluid<T>),
     None,
 }
 
-impl ArithmeticAnalysisPayload {
-    pub fn expect_number(self) -> Option<Number> {
+impl<T: SaturationNumber> ArithmeticAnalysisPayload<T> {
+    pub fn expect_number(self) -> Option<T> {
         match self {
             ArithmeticAnalysisPayload::Number(nm) => Some(nm),
             _ => None,
@@ -46,7 +47,7 @@ impl MixLang {
 }
 
 impl Analysis<MixLang> for ArithmeticAnalysis {
-    type Data = ArithmeticAnalysisPayload;
+    type Data = ArithmeticAnalysisPayload<Number>;
 
     fn make(egraph: &EGraph<MixLang, Self>, enode: &MixLang) -> Self::Data {
         match enode {
@@ -177,15 +178,15 @@ impl Analysis<MixLang> for ArithmeticAnalysis {
 }
 
 pub struct OpCost<'a> {
-    target: Concentration,
-    input_space: HashSet<Concentration>,
+    target: Number,
+    input_space: HashSet<Number>,
     egraph: &'a EGraph<MixLang, ArithmeticAnalysis>,
 }
 
 impl<'a> OpCost<'a> {
     pub(crate) fn new(
-        target: Concentration,
-        input_space: HashSet<Concentration>,
+        target: Number,
+        input_space: HashSet<Number>,
         egraph: &'a EGraph<MixLang, ArithmeticAnalysis>,
     ) -> Self {
         Self {
@@ -195,15 +196,15 @@ impl<'a> OpCost<'a> {
         }
     }
 
-    fn is_fluid_in_input_space(&self, fluid: &Fluid) -> bool {
+    fn is_fluid_in_input_space(&self, fluid: &Fluid<Number>) -> bool {
         self.input_space.contains(fluid.concentration())
     }
 
-    fn is_direct_fluid_available(&self, fluid: &Fluid) -> bool {
+    fn is_direct_fluid_available(&self, fluid: &Fluid<Number>) -> bool {
         self.is_fluid_in_input_space(fluid)
     }
 
-    fn proximity_cost(&self, conc: &Concentration) -> f64 {
+    fn proximity_cost(&self, conc: &Number) -> f64 {
         let mut min = 1.0;
         for val in self.input_space.iter() {
             let diff = conc.clone() - val.clone();
@@ -436,7 +437,7 @@ fn normalize_expr_by_min_volume(expr: &RecExpr<MixLang>) -> String {
 pub fn saturate(
     target_concentration: Concentration,
     time_limit: u64,
-    input_space: &[Fluid],
+    input_space: &[Fluid<Number>],
 ) -> Result<Sequence, MixerGenerationError> {
     let mut initial_egraph = EGraph::new(ArithmeticAnalysis);
     let target_node = format!("(fluid {} {})", target_concentration, f64::MAX)

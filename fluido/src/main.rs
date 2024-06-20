@@ -3,7 +3,7 @@ mod cmd;
 use clap::Parser;
 use cmd::Args;
 use fluido_core::{Config, LogConfig, MixerGenerationConfig, MixerGenerator};
-use fluido_types::fluid::{Concentration, Fluid};
+use fluido_types::fluid::{Concentration, Fluid, Number};
 
 fn main() -> anyhow::Result<()> {
     let args = Args::try_parse()?;
@@ -29,7 +29,7 @@ fn handle_args(args: Args) -> anyhow::Result<()> {
     let config = Config::from(args);
 
     let mixer_design =
-        fluido_core::search_mixer_design(config, target_concentration, &input_space)?;
+        fluido_core::search_mixer_design::<Number>(config, target_concentration, &input_space)?;
 
     println!("best expr: {}", mixer_design.mixer_expr());
     println!("cost: {}", mixer_design.cost());
