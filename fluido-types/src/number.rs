@@ -9,6 +9,7 @@ use std::{
 
 pub trait SaturationNumber:
     Clone
+    + Copy
     + From<f64>
     + Into<f64>
     + Display
@@ -22,12 +23,15 @@ pub trait SaturationNumber:
     + Eq
     + Ord
     + PartialOrd
+    + Send
+    + Sync
+    + FromStr<Err = anyhow::Error>
 {
     fn valid(&self) -> bool;
     fn parse(str: &str) -> anyhow::Result<Self>;
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct LimitedFloat {
     pub wrapped: i64,
 }

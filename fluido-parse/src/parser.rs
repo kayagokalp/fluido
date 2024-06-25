@@ -59,9 +59,22 @@ mod tests {
         expr::Expr,
         fluid::{Concentration, Fluid, Volume},
     };
+    #[test]
+    fn parse_single_mix_frac() {
+        let input_str = "(mix (fluid 0.2 1.0) (fluid 0.3 1.0))";
+        let expr = Expr::parse(input_str).unwrap();
+        let unit_vol = Volume::from(1.0);
+
+        let zero_point_two = Concentration::from(0.2);
+        let zero_point_three = Concentration::from(0.3);
+        let first_fluid = Expr::Fluid(Fluid::new(zero_point_two, unit_vol.clone()));
+        let second_fluid = Expr::Fluid(Fluid::new(zero_point_three, unit_vol));
+        let expected_expr = Expr::Mix(Box::new(first_fluid), Box::new(second_fluid));
+        assert_eq!(expected_expr, expr)
+    }
 
     #[test]
-    fn parse_single_mix() {
+    fn parse_single_mix_lf() {
         let input_str = "(mix (fluid 0.2 1.0) (fluid 0.3 1.0))";
         let expr = Expr::parse(input_str).unwrap();
         let unit_vol = Volume::from(1.0);

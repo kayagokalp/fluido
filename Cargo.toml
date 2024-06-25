@@ -5,7 +5,7 @@ members = ["fluido-generation", "fluido", "fluido-parse", "fluido-ir", "fluido-c
 [workspace.dependencies]
 anyhow = "1.0.79"
 clap = "4.5.0"
-egg = "0.9.5"
+egg = { git = "https://github.com/kayagokalp/egg", branch = "kayagokalp/generic-define-language" }
 petgraph = "0.6.4"
 thiserror = "1.0.57"
 serde = "1.0.202"

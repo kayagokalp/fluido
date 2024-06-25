@@ -13,7 +13,7 @@ use fluido_types::{
         FluidoError, IRGenerationError, InterefenceGraphGenerationError, MixerGenerationError,
     },
     expr::Expr,
-    fluid::{Concentration, Fluid, Number},
+    fluid::{Fluid, Number},
     number::SaturationNumber,
 };
 
@@ -114,12 +114,12 @@ impl MixerGenerationConfig {
 }
 
 /// Generate a mixer for the target_concentration from input space.
-fn generate_mixer_sequence(
-    target_concentration: Concentration,
-    input_space: &[Fluid<Number>],
+fn generate_mixer_sequence<T: SaturationNumber + 'static>(
+    target_concentration: T,
+    input_space: &[Fluid<T>],
     time_limit: u64,
     mixer_generator: MixerGenerator,
-) -> Result<Sequence, MixerGenerationError> {
+) -> Result<Sequence<T>, MixerGenerationError> {
     match mixer_generator {
         MixerGenerator::EqualitySaturation => {
             let generated_mixer_sequence =
@@ -130,7 +130,9 @@ fn generate_mixer_sequence(
 }
 
 /// Generates a `mixer-graph` from expr.
-fn generate_graph<T: SaturationNumber>(sequence: Sequence) -> Result<Graph<T>, IRGenerationError> {
+fn generate_graph<T: SaturationNumber>(
+    sequence: Sequence<T>,
+) -> Result<Graph<T>, IRGenerationError> {
     let best_expr = sequence.best_expr;
     let expr_str = format!("{best_expr}");
     let expr = Expr::parse(&expr_str)?;
