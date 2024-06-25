@@ -2,20 +2,28 @@ use crate::{
     graph::Graph,
     ir::{IROp, Operand},
 };
-use fluido_types::{expr::Expr, fluid::Fluid};
+use fluido_types::{expr::Expr, fluid::Fluid, number::SaturationNumber};
 
-#[derive(Debug, Default)]
-pub struct IRBuilder {
-    context: IRContext,
+#[derive(Debug)]
+pub struct IRBuilder<T: SaturationNumber> {
+    context: IRContext<T>,
 }
 
 #[derive(Debug, Default)]
-pub struct IRContext {
-    ir_output: Vec<IROp>,
+pub struct IRContext<T: SaturationNumber> {
+    ir_output: Vec<IROp<T>>,
 }
 
-impl IRBuilder {
-    pub fn build_ir(&mut self, graph: Graph) -> Vec<IROp> {
+impl<T: SaturationNumber> Default for IRBuilder<T> {
+    fn default() -> Self {
+        Self {
+            context: IRContext { ir_output: vec![] },
+        }
+    }
+}
+
+impl<T: SaturationNumber> IRBuilder<T> {
+    pub fn build_ir(&mut self, graph: Graph<T>) -> Vec<IROp<T>> {
         let root_node = graph.root_node().expect("missing root node in graph");
         let expr = &graph.as_ref()[root_node];
         self.compile_expr(expr.clone());
@@ -23,7 +31,7 @@ impl IRBuilder {
     }
 
     /// Returns the expr's result v_reg.
-    pub fn compile_expr(&mut self, expr: Expr) -> Option<usize> {
+    pub fn compile_expr(&mut self, expr: Expr<T>) -> Option<usize> {
         match expr {
             Expr::Mix(l_expr, r_expr) => self.compile_mix(*l_expr, *r_expr),
             Expr::Fluid(fluid) => self.compile_fluid(fluid),
@@ -31,7 +39,7 @@ impl IRBuilder {
         }
     }
 
-    pub fn compile_fluid(&mut self, fluid: Fluid) -> Option<usize> {
+    pub fn compile_fluid(&mut self, fluid: Fluid<T>) -> Option<usize> {
         let current_virtual_register_ix = self.context.ir_output.len();
         let store_destination_v_reg = Operand::VirtualRegister(current_virtual_register_ix);
         let value_to_store = Operand::Const(fluid);
@@ -40,7 +48,7 @@ impl IRBuilder {
         Some(current_virtual_register_ix)
     }
 
-    pub fn compile_mix(&mut self, lhs: Expr, rhs: Expr) -> Option<usize> {
+    pub fn compile_mix(&mut self, lhs: Expr<T>, rhs: Expr<T>) -> Option<usize> {
         let lhs_vreg_ix = self
             .compile_expr(lhs)
             .expect("Internal Compiler Error, please open an issue!");

@@ -1,4 +1,3 @@
-use crate::fluid::Concentration;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -6,7 +5,7 @@ pub enum MixerGenerationError {
     #[error("Saturation error while generating the mixer space: {0}")]
     SaturationError(String),
     #[error("Failed to parse target concentration (`{0}`) as a node.")]
-    FailedToParseTarget(Concentration),
+    FailedToParseTarget(String),
 }
 
 #[derive(Error, Debug)]

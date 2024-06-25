@@ -1,8 +1,8 @@
-use crate::fluid::{Concentration, Fluid};
+use crate::{fluid::Fluid, number::SaturationNumber};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
-pub enum Expr {
-    Mix(Box<Expr>, Box<Expr>),
-    LimitedFloat(Concentration),
-    Fluid(Fluid),
+pub enum Expr<T: SaturationNumber> {
+    Mix(Box<Expr<T>>, Box<Expr<T>>),
+    Number(T),
+    Fluid(Fluid<T>),
 }

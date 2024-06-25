@@ -1,25 +1,54 @@
+use fraction::Fraction;
 use serde::{Deserialize, Serialize};
 use std::{
-    cmp::max,
-    num::ParseFloatError,
+    fmt::{Debug, Display},
+    hash::Hash,
     ops::{Add, Div, Mul, Sub},
     str::FromStr,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+pub trait SaturationNumber:
+    Clone
+    + Copy
+    + From<f64>
+    + Into<f64>
+    + Display
+    + Debug
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + Add<Output = Self>
+    + Div<Output = Self>
+    + Hash
+    + PartialEq
+    + Eq
+    + Ord
+    + PartialOrd
+    + Send
+    + Sync
+    + FromStr<Err = anyhow::Error>
+{
+    fn valid(&self) -> bool;
+    fn parse(str: &str) -> anyhow::Result<Self>;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct LimitedFloat {
     pub wrapped: i64,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize, PartialOrd, Ord, Hash)]
 pub struct Frac {
-    numerator: i32,
-    power: i32,
+    fraction: Fraction,
 }
 
-impl Frac {
-    fn new(numerator: i32, power: i32) -> Self {
-        Self { numerator, power }
+impl SaturationNumber for Frac {
+    fn valid(&self) -> bool {
+        let f64_val: f64 = self.into();
+        (0.0..1.0).contains(&f64_val)
+    }
+
+    fn parse(str: &str) -> anyhow::Result<Self> {
+        Self::from_str(str)
     }
 }
 
@@ -27,16 +56,8 @@ impl Add for Frac {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        if self.power == other.power {
-            // If powers are equal, simply add the numerators
-            Self::new(self.numerator + other.numerator, self.power)
-        } else {
-            // If powers are different, align them to the common power
-            let common_power = max(self.power, other.power);
-            let numerator1 = self.numerator << (common_power - self.power);
-            let numerator2 = other.numerator << (common_power - other.power);
-            Self::new(numerator1 + numerator2, common_power)
-        }
+        let new_frac = self.fraction + other.fraction;
+        Self { fraction: new_frac }
     }
 }
 
@@ -44,16 +65,8 @@ impl Sub for Frac {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        if self.power == other.power {
-            // If powers are equal, simply subtract the numerators
-            Self::new(self.numerator - other.numerator, self.power)
-        } else {
-            // If powers are different, align them to the common power
-            let common_power = max(self.power, other.power);
-            let numerator1 = self.numerator << (common_power - self.power);
-            let numerator2 = other.numerator << (common_power - other.power);
-            Self::new(numerator1 - numerator2, common_power)
-        }
+        let new_frac = self.fraction - other.fraction;
+        Self { fraction: new_frac }
     }
 }
 
@@ -62,7 +75,8 @@ impl Mul for Frac {
 
     fn mul(self, other: Self) -> Self {
         // Multiply the numerators and add the powers
-        Self::new(self.numerator * other.numerator, self.power + other.power)
+        let new_frac = self.fraction * other.fraction;
+        Self { fraction: new_frac }
     }
 }
 
@@ -71,15 +85,56 @@ impl Div for Frac {
 
     fn div(self, other: Self) -> Self {
         // Divide the numerators and subtract the powers
-        Self::new(self.numerator / other.numerator, self.power - other.power)
+        let new_frac = self.fraction / other.fraction;
+        Self { fraction: new_frac }
+    }
+}
+
+impl FromStr for Frac {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let fraction = s.parse::<Fraction>()?;
+        Ok(Self { fraction })
+    }
+}
+
+impl Display for Frac {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.fraction)
+    }
+}
+
+impl From<&Frac> for f64 {
+    fn from(value: &Frac) -> Self {
+        let val = *value;
+        val.into()
+    }
+}
+
+impl From<f64> for Frac {
+    fn from(value: f64) -> Self {
+        let fraction = Fraction::from(value);
+        Self { fraction }
+    }
+}
+
+impl From<Frac> for f64 {
+    fn from(value: Frac) -> Self {
+        value.fraction.try_into().unwrap()
+    }
+}
+
+impl SaturationNumber for LimitedFloat {
+    fn valid(&self) -> bool {
+        self.wrapped >= 0 && self.wrapped as f64 <= 1.0f64 / Self::EPSILON
+    }
+
+    fn parse(str: &str) -> anyhow::Result<Self> {
+        Self::from_str(str)
     }
 }
 
 impl LimitedFloat {
-    pub fn valid(&self) -> bool {
-        self.wrapped >= 0 && self.wrapped as f64 <= 1.0f64 / Self::EPSILON
-    }
-
     pub const EPSILON: f64 = 0.0001;
 }
 
@@ -148,7 +203,7 @@ impl From<f64> for LimitedFloat {
 }
 
 impl FromStr for LimitedFloat {
-    type Err = ParseFloatError;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let f64_val = s.parse::<f64>()?;
@@ -176,11 +231,18 @@ impl std::fmt::Display for LimitedFloat {
 
 #[cfg(test)]
 mod tests {
+    use super::LimitedFloat;
+    use crate::number::{Frac, SaturationNumber};
+    use fraction::Fraction;
     use serde_test::{assert_tokens, Token};
 
-    use crate::number::Frac;
-
-    use super::LimitedFloat;
+    /// Frac::new impl for easy testing.
+    impl Frac {
+        fn new(num1: u16, num2: u16) -> Self {
+            let fraction = Fraction::new(num1, num2);
+            Self { fraction }
+        }
+    }
 
     #[test]
     fn test_lf_ser_de() {
@@ -290,35 +352,35 @@ mod tests {
     }
 
     #[test]
-    fn test_frac_add_same_power() {
+    fn test_frac_add_same_dividend() {
         let a = Frac::new(1, 2);
         let b = Frac::new(1, 2);
         let result = a + b;
-        assert_eq!(result, Frac::new(2, 2)); // 2/4 = 1/2^2
+        assert_eq!(result, Frac::new(2, 2)); // 2/2
     }
 
     #[test]
-    fn test_frac_add_different_power() {
+    fn test_frac_add_different_dividend() {
         let a = Frac::new(1, 2);
         let b = Frac::new(1, 3);
         let result = a + b;
-        assert_eq!(result, Frac::new(3, 3)); // 1/4 + 1/8 = 3/8 = 3/2^3
+        assert_eq!(result, Frac::new(5, 6)); // 1/2 + 1/3 = 5/6
     }
 
     #[test]
-    fn test_frac_sub_same_power() {
+    fn test_frac_sub_same_dividend() {
         let a = Frac::new(2, 2);
         let b = Frac::new(1, 2);
         let result = a - b;
-        assert_eq!(result, Frac::new(1, 2)); // 2/4 - 1/4 = 1/4 = 1/2^2
+        assert_eq!(result, Frac::new(1, 2)); // 2/2 - 1/2 = 1/2
     }
 
     #[test]
-    fn test_frac_sub_different_power() {
+    fn test_frac_sub_different_dividend() {
         let a = Frac::new(1, 2);
         let b = Frac::new(1, 3);
         let result = a - b;
-        assert_eq!(result, Frac::new(1, 3)); // 1/4 - 1/8 = 1/8 = 1/2^3
+        assert_eq!(result, Frac::new(1, 6)); // 1/2 - 1/3 = 1/6
     }
 
     #[test]
@@ -326,7 +388,7 @@ mod tests {
         let a = Frac::new(1, 2);
         let b = Frac::new(1, 3);
         let result = a * b;
-        assert_eq!(result, Frac::new(1, 5)); // 1/4 * 1/8 = 1/32 = 1/2^5
+        assert_eq!(result, Frac::new(1, 6)); // 1/2 * 1/3 = 1/6
     }
 
     #[test]
@@ -334,7 +396,7 @@ mod tests {
         let a = Frac::new(1, 2);
         let b = Frac::new(1, 3);
         let result = a / b;
-        assert_eq!(result, Frac::new(1, -1)); // 1/4 / 1/8 = 2 = 1/2^-1
+        assert_eq!(result, Frac::new(3, 2)); // 1/2 / 1/3 = 3/2
     }
 
     #[test]
@@ -346,14 +408,96 @@ mod tests {
             &[
                 Token::Struct {
                     name: "Frac",
+                    len: 1,
+                },
+                Token::Str("fraction"),
+                Token::TupleVariant {
+                    name: "GenericFraction",
+                    variant: "Rational",
                     len: 2,
                 },
-                Token::Str("numerator"),
-                Token::I32(1),
-                Token::Str("power"),
-                Token::I32(2),
+                Token::UnitVariant {
+                    name: "Sign",
+                    variant: "Plus",
+                },
+                Token::Tuple { len: 2 },
+                Token::U64(1),
+                Token::U64(2),
+                Token::TupleEnd,
+                Token::TupleVariantEnd,
                 Token::StructEnd,
             ],
         );
+    }
+
+    #[test]
+    fn frac_from_str() {
+        let frac_str = "1/10";
+        let frac = frac_str.parse::<Frac>().unwrap();
+        let expected_num = 1;
+        let expected_pow = 10;
+        let expected_frac = Frac::new(expected_num, expected_pow);
+
+        assert_eq!(frac, expected_frac)
+    }
+
+    #[test]
+    fn frac_display() {
+        let expected_frac_str = "1/2";
+        let num = 1;
+        let pow = 2;
+        let frac = Frac::new(num, pow);
+
+        let frac_str = format!("{}", frac);
+        assert_eq!(frac_str, expected_frac_str)
+    }
+
+    #[test]
+    fn frac_display_to_from_str() {
+        let num = 1;
+        let pow = 2;
+        let frac = Frac::new(num, pow);
+
+        let frac_str = format!("{}", frac);
+        let parsed_frac = frac_str.parse::<Frac>().unwrap();
+        assert_eq!(parsed_frac, frac);
+    }
+
+    #[test]
+    fn test_frac_from_f64() {
+        let value = 0.5;
+        let frac: Frac = value.into();
+        assert_eq!(frac, Frac::new(1, 2)); // 0.5 = 1/2
+
+        let value = 0.125;
+        let frac: Frac = value.into();
+        assert_eq!(frac, Frac::new(1, 8)); // 0.125 = 1/2^3
+
+        let value = 0.75;
+        let frac: Frac = value.into();
+        assert_eq!(frac, Frac::new(3, 4)); // 0.75 = 3/2^2
+
+        let value = 3.0;
+        let frac: Frac = value.into();
+        assert_eq!(frac, Frac::new(3, 1)); // 3.0 = 3/2^0
+
+        let value = 0.1;
+        let frac: Frac = value.into();
+        assert_eq!(frac, Frac::new(1, 10)); // 0.1 = 1/10
+    }
+
+    #[test]
+    fn test_f64_from_frac() {
+        let frac = Frac::new(1, 2);
+        let value: f64 = frac.into();
+        assert_eq!(value, 0.5); // 1/4
+
+        let frac = Frac::new(1, 8);
+        let value: f64 = frac.into();
+        assert_eq!(value, 0.125); // 1/8
+
+        let frac = Frac::new(3, 8);
+        let value: f64 = frac.into();
+        assert_eq!(value, 0.375); // 3/8
     }
 }
