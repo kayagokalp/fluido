@@ -37,7 +37,7 @@ pub async fn run_saturation(
             })
             .collect::<anyhow::Result<Vec<Fluid<Number>>>>()?;
 
-        let target_concentration: Number = target_fluids[0].concentration().clone();
+        let target_concentration: Number = *target_fluids[0].concentration();
         let mixer_design =
             search_mixer_design::<Number>(config, target_concentration, input_fluids.as_ref())?;
 

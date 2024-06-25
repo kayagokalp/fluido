@@ -44,7 +44,7 @@ pub struct Frac {
 impl SaturationNumber for Frac {
     fn valid(&self) -> bool {
         let f64_val: f64 = self.into();
-        f64_val >= 0.0 && f64_val < 1.0
+        (0.0..1.0).contains(&f64_val)
     }
 
     fn parse(str: &str) -> anyhow::Result<Self> {
@@ -104,20 +104,9 @@ impl Display for Frac {
     }
 }
 
-/// Blanket implementation for f64 <-> Frac conversion.
-impl<T> From<&T> for Frac
-where
-    T: Into<Frac>,
-{
-    fn from(value: &T) -> Self {
-        // TODO: consider making Frac a copy type.
-        value.into()
-    }
-}
-
 impl From<&Frac> for f64 {
     fn from(value: &Frac) -> Self {
-        let val = value.clone();
+        let val = *value;
         val.into()
     }
 }

@@ -100,19 +100,19 @@ impl<T: SaturationNumber> Fluid<T> {
     ///  2. Input fluids volumes summed equals to output fluid. (No loss in terms of liquid
     ///     volume).
     pub fn mix(&self, other: &Fluid<T>) -> Self {
-        let self_conc = self.concentration.clone();
-        let other_conc = other.concentration.clone();
+        let self_conc = self.concentration;
+        let other_conc = other.concentration;
 
-        let self_vol = self.unit_volume().clone();
-        let other_vol = other.unit_volume().clone();
+        let self_vol = *self.unit_volume();
+        let other_vol = *other.unit_volume();
 
-        let resulting_vol = self_vol.clone() + other_vol.clone();
+        let resulting_vol = self_vol + other_vol;
 
-        dbg!(self_conc.clone());
-        dbg!(self_vol.clone());
+        dbg!(self_conc);
+        dbg!(self_vol);
         let self_mult: T = self_conc * self_vol;
         let other_mult: T = other_conc * other_vol;
-        let resulting_conc = (self_mult + other_mult) / resulting_vol.clone();
+        let resulting_conc = (self_mult + other_mult) / resulting_vol;
 
         Self::new(resulting_conc, resulting_vol)
     }
